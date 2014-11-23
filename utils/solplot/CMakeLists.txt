@@ -4,10 +4,20 @@ cmake_minimum_required(VERSION 2.6)
 set(PRJ_NAME solplot)
 project(${PRJ_NAME})
 
+# if compile on Mac OSX, the "-framework Cocoa" flag should be added
+if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Cocoa")
+    message("Compile on APPLE MACOSX")
+elseif(UNIX)
+    message("Compile on UNIX")
+endif()
+
 # Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
 # The FLTK libs, headers,... are installed in "3rdparty/fltk-1.3.3/build/
 #   install" directories
-set(FLTK_DIR "${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/install/lib/fltk")
+set(FLTK_DIR "${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build")
+# Set FLTK libraries path
+set(FLTK_LIBRARIES "${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk.a;${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk_forms.a;${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk_gl.a;${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk_images.a")
 
 # print out paths in order to check if goes wrong
 message("Project Source Dir: \"${${PRJ_NAME}_SOURCE_DIR}\"")
@@ -34,4 +44,4 @@ add_executable(solplot3d SolPlotMain.cxx)
 add_dependencies(solplot3d SolPlotUI)
 
 target_link_libraries(solplot3d SolPlotUI)
-target_link_libraries(solplot3d fltk)
+target_link_libraries(solplot3d ${FLTK_LIBRARIES})
