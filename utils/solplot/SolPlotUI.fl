@@ -14,7 +14,7 @@ class SolPlotUI {open
         xywh {0 0 240 20}
       } {
         Fl_Menu_Bar Menu {
-          callback SolPlotMenuCallback open selected
+          callback SolPlot_Menu_Callback open
           xywh {0 0 240 20}
           code0 {\#include "SolPlotPanel.h"}
         } {
@@ -22,8 +22,9 @@ class SolPlotUI {open
             label {&File} open
             xywh {0 0 70 20}
           } {
-            MenuItem File_open {
+            MenuItem Item_FileOpen {
               label {Open File...}
+              callback SolPlot_Menu_Callback selected
               xywh {0 0 50 20} shortcut 0x4006f
             }
           }

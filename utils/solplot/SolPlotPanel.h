@@ -9,6 +9,6 @@
 #ifndef SOLPLOTPANEL_H
 #define SOLPLOTPANEL_H 1
 
-void SolPlotMenuCallback(Fl_Widget *w, void *);
+void SolPlot_Menu_Callback(Fl_Widget *, void *);
 
 #endif

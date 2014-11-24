@@ -25,8 +25,6 @@ endif()
 # The FLTK libs, headers,... are installed in "3rdparty/fltk-1.3.3/build/
 #   install" directories
 set(FLTK_DIR "${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build")
-# Set FLTK libraries path
-set(FLTK_LIBRARIES "${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk.a;${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk_forms.a;${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk_gl.a;${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib/libfltk_images.a")
 
 # print out paths in order to check if goes wrong
 message("Project Source Dir: \"${${PRJ_NAME}_SOURCE_DIR}\"")
@@ -39,11 +37,15 @@ message("FLTK_LIBRARIES: \"${FLTK_LIBRARIES}\"")
 # the FindFLTK.cmake supplied with CMake, which doesn't work with this version
 # of FLTK
 find_package(FLTK REQUIRED NO_MODULE)
+find_package(OpenGL REQUIRED)
 # this file is in the same folder as FLTKConfig.cmake file
 include(${FLTK_USE_FILE})
 
 # add source directory into include path
-include_directories("${${PRJ_NAME}_SOURCE_DIR}")
+include_directories(${${PRJ_NAME}_SOURCE_DIR})
+
+# add library dir into lib path
+link_directories(${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib)
 
 # convert GUI *.fl ui file to *.cxx and *.h files
 fltk_wrap_ui(SolPlotUI SolPlotUI.fl)
@@ -53,4 +55,5 @@ add_executable(solplot3d SolPlotMain.cxx)
 add_dependencies(solplot3d SolPlotUI)
 
 target_link_libraries(solplot3d SolPlotUI)
-target_link_libraries(solplot3d ${FLTK_LIBRARIES})
+target_link_libraries(solplot3d fltk)
+#target_link_libraries(solplot3d fltk_gl)
