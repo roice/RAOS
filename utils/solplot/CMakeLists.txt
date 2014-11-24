@@ -1,12 +1,21 @@
 cmake_minimum_required(VERSION 2.6)
 
+# ================ User can Access ==================
 # Project name
 set(PRJ_NAME solplot)
-project(${PRJ_NAME})
+# Add DEBUG defination to print out debug info
+add_definitions(-DDEBUG)
+# ===================================================
 
+
+
+# ============= Don't touch the following ===========
+project(${PRJ_NAME})
 # if compile on Mac OSX, the "-framework Cocoa" flag should be added
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -framework Cocoa")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -framework Cocoa")
     message("Compile on APPLE MACOSX")
 elseif(UNIX)
     message("Compile on UNIX")
