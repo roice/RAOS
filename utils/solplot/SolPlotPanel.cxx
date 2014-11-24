@@ -13,9 +13,13 @@
 #include <FL/Fl_Menu_Bar.H>
 #include <FL/Fl_File_Chooser.H>
 #include <FL/filename.H>		// fl_open_uri()
+#include <rtklib.h>             // RTK-GPS related, readsol(), solbuf_t ...
 
+/* definitions */
+#define MAXNFILE 256            // max number of solution files
 
 /* Functions... */
+static void SolPlot_LoadFilePlot(char *files[], int nfile);
 static void fc_callback(Fl_File_Chooser *, void *);
 
 /* This callback is invoked whenever the user clicks File->Open File... */
@@ -33,7 +37,7 @@ void SolPlot_Menu_Callback(Fl_Widget *w, void *)
     char path_picked_item[256];
     bar->item_pathname(path_picked_item, sizeof(path_picked_item));
     /* Print item picked */
-    fprintf(stderr, "Debug: You picked '%s'", item->label());
+    fprintf(stderr, "DEBUG: You picked '%s'", item->label());
     /* ..and full pathname */
     fprintf(stderr, ", item_pathname() is '%s'\n", path_picked_item);
 #endif
@@ -46,15 +50,45 @@ void SolPlot_Menu_Callback(Fl_Widget *w, void *)
 #endif
 
         /* return absolute file path */
-        char *file_abs_path = fl_file_chooser("Choose a solution file", "NEMA0183 (*.{nmea, nm})", ".", 0);
+        char *file_abs_path[MAXNFILE];
+        file_abs_path[0] = fl_file_chooser("Choose a solution file", "NEMA0183 (*.{nmea, nm})", ".", 0);
         if (file_abs_path != NULL)
         {
 #if(DEBUG)
-            fprintf(stderr, "file path is: %s", file_abs_path);
+            fprintf(stderr, "DEBUG: file path is: %s", file_abs_path);
 #endif
-            SolPlot_LoadFile(file_abs_path,);
+            SolPlot_LoadFilePlot(file_abs_path, 1);
+        }
     }
 }
+
+/* Load solution file and plot */
+static void SolPlot_LoadFilePlot(char *files[], int nfile)
+{
+    /* solution buffer structure */
+    solbuf_t sol={0};
+    /* solution file path array */
+    char *paths[MAXNFILE];
+    int i,n=0;
+
+    /* Get paths of all of the solution files */
+    for (i=0; i<nfile; i++) paths[i]=files[i];
+
+    if(!readsol(paths, nfile, &sol))
+    {
+        for(i=0; i<nfile; i++)
+        {
+            fprintf(stderr, "ERROR: No solution data: %s", paths[i]);
+        }
+    }
+    else
+    {
+#if(DEBUG)
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[0]->rr[0]: %f", sol.data[0].rr[0]);
+#endif
+    }
+}
+
 /* Handle choices in the file chooser */
 static void fc_callback(Fl_File_Chooser *fc, void *data)
 {

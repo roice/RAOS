@@ -14,6 +14,7 @@ sleep 1
 # clear 3rd party software builds
 cd $prjtop/3rdparty
 rm -rf fltk-1.3.3/build
+rm -rf rtklib_2.4.2_p10/build
 
 # clear utils builds
 cd $prjtop/utils

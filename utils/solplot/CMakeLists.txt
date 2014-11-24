@@ -42,10 +42,16 @@ find_package(OpenGL REQUIRED)
 include(${FLTK_USE_FILE})
 
 # add source directory into include path
+# add project source dir
 include_directories(${${PRJ_NAME}_SOURCE_DIR})
+# add rtklib header dir
+include_directories(${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/rtklib_2.4.2/src)
 
 # add library dir into lib path
+# add fltk lib directory
 link_directories(${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib)
+# add rtklib lib directory
+link_directories(${${PRJ_NAME}_SOURCE_DIR}/../../3rdparty/rtklib_2.4.2/build)
 
 # convert GUI *.fl ui file to *.cxx and *.h files
 fltk_wrap_ui(SolPlotUI SolPlotUI.fl)
