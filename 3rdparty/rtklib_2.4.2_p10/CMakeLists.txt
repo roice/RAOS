@@ -1,3 +1,11 @@
+#====================================================
+# CMakeLists configuration file for rtklib
+# this file aims to build rtklib library for
+# FGCSGDM use.
+# 
+# Author: Roice(LUO Bing)
+# Date:   2014-11-24 Create this file
+
 cmake_minimum_required(VERSION 2.6)
 
 # ================ User can Access ==================

@@ -14,6 +14,7 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/filename.H>		// fl_open_uri()
 #include <rtklib.h>             // RTK-GPS related, readsol(), solbuf_t ...
+#include <octave/oct.h>         // Octave math functions related
 
 /* definitions */
 #define MAXNFILE 256            // max number of solution files
@@ -55,7 +56,7 @@ void SolPlot_Menu_Callback(Fl_Widget *w, void *)
         if (file_abs_path != NULL)
         {
 #if(DEBUG)
-            fprintf(stderr, "DEBUG: file path is: %s", file_abs_path);
+            fprintf(stderr, "DEBUG: Selected file path is: %s\n", file_abs_path[0]);
 #endif
             SolPlot_LoadFilePlot(file_abs_path, 1);
         }
@@ -74,6 +75,15 @@ static void SolPlot_LoadFilePlot(char *files[], int nfile)
     /* Get paths of all of the solution files */
     for (i=0; i<nfile; i++) paths[i]=files[i];
 
+#if(DEBUG)
+    for (i=0; i<nfile; i++)
+    {
+        fprintf(stderr, "DEBUG: These files will be loaded: \n");
+        fprintf(stderr, "       (%d) %s\n", i, paths[i]);
+    }
+#endif
+
+    /* read and decode file */
     if(!readsol(paths, nfile, &sol))
     {
         for(i=0; i<nfile; i++)
@@ -84,8 +94,18 @@ static void SolPlot_LoadFilePlot(char *files[], int nfile)
     else
     {
 #if(DEBUG)
-        fprintf(stderr, "DEBUG: Decoded solution sol.data[0]->rr[0]: %f", sol.data[0].rr[0]);
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[0]->rr[0] == %f\n", sol.data[0].rr[0]);
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[0]->rr[1] == %f\n", sol.data[0].rr[1]);
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[0]->rr[2] == %f\n", sol.data[0].rr[2]);
+        fprintf(stderr, "DEBUG: sol.data[0]->type == %d\n", sol.data[0].type);
+        fprintf(stderr, "DEBUG: Max number of solution: %d\n", sol.n);
+        fprintf(stderr, "DEBUG: Max number of buffer: %d\n", sol.nmax);
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[%d]->rr[0] == %f\n", sol.n -1, sol.data[sol.n-1].rr[0]);
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[%d]->rr[1] == %f\n", sol.n -1, sol.data[sol.n-1].rr[1]);
+        fprintf(stderr, "DEBUG: Decoded solution sol.data[%d]->rr[2] == %f\n", sol.n -1, sol.data[sol.n-1].rr[2]);
 #endif
+        /* plot solutions with octave */
+
     }
 }
 
