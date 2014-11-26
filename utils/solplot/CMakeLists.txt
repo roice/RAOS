@@ -66,8 +66,10 @@ include(${FLTK_USE_FILE})
 # add user interface and callback source dir to search for header files
 #include_directories(${PROJECT_SOURCE_DIR}/ui)
 include_directories(${PROJECT_SOURCE_DIR}/ui/cb)
-# add rtk dir of this project to search for RTK related functions
+# add sol dir of this project to search for RTK related functions
 include_directories(${PROJECT_SOURCE_DIR}/sol)
+# add plot dir of this project to search for plot.h
+include_directories(${PROJECT_SOURCE_DIR}/plot)
 
 #---- library files path settings ----
 # add library dir into lib path
@@ -75,6 +77,8 @@ include_directories(${PROJECT_SOURCE_DIR}/sol)
 link_directories(${PROJECT_SOURCE_DIR}/../../3rdparty/fltk-1.3.3/build/lib)
 # add rtklib lib directory
 link_directories(${PROJECT_SOURCE_DIR}/../../3rdparty/rtklib_2.4.2_p10/build)
+# add octave lib directory
+link_directories(/usr/lib/x86_64-linux-gnu)
 
 #---- start compiling ----
 # convert GUI *.fl ui file to *.cxx and *.h files
@@ -89,13 +93,16 @@ add_dependencies(${PRJ_NAME} plot)
 
 #---- start linking ----
 # Note: the former line depends on the next line
-# link plot library created above
-target_link_libraries(${PRJ_NAME} plot)
 # link GUI library created above
 target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
+# link plot library created above
+target_link_libraries(${PRJ_NAME} plot)
 # link external FLTK library
 target_link_libraries(${PRJ_NAME} fltk)
 # link external OpenGL library
 #target_link_libraries(${PRJ_NAME} fltk_gl)
 # link external rtklib library
 target_link_libraries(${PRJ_NAME} rtk)
+# link external octave library
+target_link_libraries(${PRJ_NAME} octinterp)
+target_link_libraries(${PRJ_NAME} octave)

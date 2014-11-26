@@ -14,6 +14,7 @@
 #include <FL/Fl_File_Chooser.H>
 #include <FL/filename.H>		// fl_open_uri()
 #include "ufrtk.h"             // RTK related functions of this project
+#include "plot.h"               // plot functions
 
 /* Functions... */
 static void SolPlot_LoadFilePlot(char *files[], int nfile);
@@ -100,6 +101,7 @@ static void SolPlot_LoadFilePlot(char *files[], int nfile)
         fprintf(stderr, "DEBUG: Decoded solution sol.data[%d]->rr[2] == %f\n", sol.n -1, sol.data[sol.n-1].rr[2]);
 #endif
         /* plot solutions with octave */
+        plotRTKtraj3d(&sol);
 
     }
 }
