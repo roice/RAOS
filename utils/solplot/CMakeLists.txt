@@ -9,6 +9,10 @@ cmake_minimum_required(VERSION 2.6)
 #====================================================
 # ================ User can Access ==================
 #====================================================
+# install path
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+#set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
+#set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 # Project name
 set(PRJ_NAME solplot)
 # Add DEBUG defination to print out debug info
@@ -106,3 +110,10 @@ target_link_libraries(${PRJ_NAME} rtk)
 # link external octave library
 target_link_libraries(${PRJ_NAME} octinterp)
 target_link_libraries(${PRJ_NAME} octave)
+
+# install
+install(TARGETS ${PRJ_NAME}
+    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin
+    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/lib
+    ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib
+    )

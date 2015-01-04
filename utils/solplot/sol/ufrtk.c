@@ -18,11 +18,17 @@ int ReadSolutionFiles(char *files[], int nfile, solbuf_t *sol)
     }
      
     /* set the origin position to 39.10639N 117.17046E 20m*/
-    origin_pos[0] = 39.10639; origin_pos[1] = 117.17046; origin_pos[3] = 20;
+    origin_pos[0] = 39.10639*D2R;   // degree to rad
+    origin_pos[1] = 117.17046*D2R;  // degree to rad
+    origin_pos[3] = 20;             // meters
     /* compute the ENU coordinate of this point, convert llh to ecef*/
+    /* origin_r contains the ecef result of origin point */
     pos2ecef(origin_pos, origin_r);
+
     for (j=0; j<3; j++)
         r[j] = origin_r[j];
+    /* compute the ENU result of this origin point */
+    /* origin_r contains the ENU result of this origin point */
     ecef2enu(origin_pos, r, origin_r);
 
 

@@ -14,9 +14,14 @@ void plotRTKtraj3d(solbuf_t *sol)
 
     octave_value_list funcArg;
 
-    /* Create a matrix with 3 rows(xyz or enu) and sol->n colums
-     * sol->n is the number of solution */
-    Matrix position(3, sol->n, double(0));
+    /* Create a matrix with 4 rows(xyz stat or enu stat) and sol->n colums 
+     * position(1, :) ------ ECEF x or ENU east
+     * position(2, :) ------ ECEF y or ENU north
+     * position(3, :) ------ ECEF z or ENU up
+     * position(4, :) ------ GPS quality indicator
+     * sol->n         ------ the number of solution
+     */
+    Matrix position(4, sol->n, double(0));
 
     /* fetch position data and put them into matrix */
     for(i=0; i<3; i++)
@@ -26,12 +31,15 @@ void plotRTKtraj3d(solbuf_t *sol)
             position(i, j) = double(sol->data[j].rr[i]);
         }
     }
+    /* fetch solution quality status and put them int matrix*/
+    for(j=0; j<sol->n; j++)
+        position(3, j) = sol->data[j].stat;
 
     funcArg(0) = position;
 
     const octave_value_list result = feval("octplotRTKtraj3d", funcArg, 1);
 #ifdef DEBUG
-    fprintf(stderr, "position(0,0) = %f", position(0, 0));
+//    fprintf(stderr, "position(0,0) = %f", position(0, 0));
 #endif
 //    clean_up_and_exit(0);
 }
