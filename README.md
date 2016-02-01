@@ -1,4 +1,4 @@
-FGCSGDM -- Ground Control Station for Gas Distribution Mapping written in FLTK
+RAOS -- Simulation Framework for Robot Active Olfaction
 =======
 
 Compilation:
@@ -13,7 +13,3 @@ Compilation:
 Dependencies:
 ----
 (1) OpenGL library<br>
-
-Note:
-----
-(1)The project directory is fgcsgdm, while other folders (include src) are FLTK's.<br>

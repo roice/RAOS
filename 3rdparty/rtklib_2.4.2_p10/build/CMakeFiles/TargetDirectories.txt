@@ -1,2 +1,0 @@
-/home/roice/workspace/ExPlatFormDevelop/fgcsgdm/3rdparty/rtklib_2.4.2_p10/build/CMakeFiles/rcv.dir
-/home/roice/workspace/ExPlatFormDevelop/fgcsgdm/3rdparty/rtklib_2.4.2_p10/build/CMakeFiles/rtk.dir

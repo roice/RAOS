@@ -20,23 +20,3 @@ cd build
 cmake -D CMAKE_INSTALL_PREFIX=./install ..
 make
 make install
-
-echo "Start Compiling RTKLIB..."
-sleep 1
-# Compile rtklib, after make, there will be librtk.a and librcv.a in the
-# build directory
-cd $prjtop/3rdparty/rtklib_2.4.2_p10
-mkdir build
-cd build
-cmake ..
-make
-
-echo "Start Compiling utils"
-sleep 5
-##======== Compile utils ======================
-# Compile SolPlot3D
-cd $prjtop/utils/solplot
-mkdir build
-cd build
-cmake ..
-make
