@@ -20,3 +20,11 @@ cd build
 cmake -D CMAKE_INSTALL_PREFIX=./install ..
 make
 make install
+
+##======== Compile RAOS ========
+cd $prjtop/src
+mkdir build
+cd build
+cmake ..
+make
+make install

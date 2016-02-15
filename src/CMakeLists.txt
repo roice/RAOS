@@ -88,10 +88,11 @@ target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
 target_link_libraries(${PRJ_NAME} fltk)
 # link external OpenGL library
 #target_link_libraries(${PRJ_NAME} fltk_gl)
+# link external image library
+target_link_libraries(${PRJ_NAME} fltk_images)
 
 # install
 install(TARGETS ${PRJ_NAME}
-    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/bin
-    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/lib
-    ARCHIVE DESTINATION ${PROJECT_SOURCE_DIR}/lib
+    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../bin
+    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/../lib
     )
