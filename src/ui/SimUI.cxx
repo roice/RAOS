@@ -1,5 +1,6 @@
 /*
  * User Interface of Simulator
+ *         using FLTK
  *
  * Author: Roice (LUO Bing)
  * Date: 2016-02-01 create this file
@@ -7,12 +8,11 @@
 
 #include "SimUI.h"
 #include "icons/icons.h" // pixmap icons used in Tool bar
+#include "SimView.h" // 3D view of RAO
 
-/**********************************************************
- **************** Class declarations *********************/
+/*------- Class declarations -------*/
 struct ToolBar_Widgets
 {
-    Fl_Box* bar; // bar box
     Fl_Button* start; // start button
     Fl_Button* pause; // pause button
     Fl_Button* stop; // stop button
@@ -36,14 +36,11 @@ public:
     ConfigDlg(int xpos, int ypos, int width, int height, const char* title);
 };
 
-/**********************************************************
- **************** SimUI **********************************/
+/*------- Creation function of User Interface  -------*/
 SimUI::SimUI(int width, int height, const char* title=0)
 {
     /* Main Window, control panel */
     Fl_Double_Window *panel = new Fl_Double_Window(width, height, title);
-    // Make the window resizable
-    panel->resizable(panel);
     // Set color of window
     panel->color(FL_WHITE);
     /* begin adding children */
@@ -52,23 +49,20 @@ SimUI::SimUI(int width, int height, const char* title=0)
     // Add tool bar, it's width is equal to panel's
     ToolBar *tool = new ToolBar(0, 0, panel->w(), 34, (void*)panel);
     tool->clear_visible_focus(); //just use mouse, no TABs
-    // Make menubar resizable
-    //panel->resizable(tool);
-    //tool->resizable(0);
-    //tool->resizable(tool->tb_widgets.bar);
-    //tool->tb_widgets.bar->resizable(0);
+    // protect buttons from resizing
+    Fl_Box *r = new Fl_Box(FL_NO_BOX, width, tool->h(), 0, height-tool->h(), "right_border");
+    r->hide();
+    panel->resizable(r);
 
+    MyGlWindow* mygl = new MyGlWindow(0, tool->h(), width, height-tool->h(), "Texture Test");
+
+    /* end adding children */
     panel->end();
     // Display the window
     panel->show();
 };
 
-
-/**********************************************************
- **************** Widgets Implementations ****************/
-
-/******** ToolBar ********/
-
+/*------- ToolBar -------*/
 void ToolBar::cb_button_start(Fl_Widget *w, void *data)
 {
     fl_alert("Start Button pressed!");
@@ -97,8 +91,8 @@ void ToolBar::cb_button_config(Fl_Widget *w, void *data)
 ToolBar::ToolBar(int Xpos, int Ypos, int Width, int Height, void *win) :
 Fl_Group(Xpos, Ypos, Width, Height)
 {
-    //box(FL_FLAT_BOX);
-    tb_widgets.bar = new Fl_Box(FL_FLAT_BOX, 0, 0, Width, Height, "");
+    begin();
+    Fl_Box *bar = new Fl_Box(FL_UP_BOX, 0, 0, Width, Height, "");
     Ypos += 2; Height -= 4; Xpos += 3; Width = Height;
     // widgets of this toolbar
     //struct ToolBar_Widgets tb_widgets;
@@ -107,11 +101,10 @@ Fl_Group(Xpos, Ypos, Width, Height)
     tb_widgets.pause = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     tb_widgets.stop = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     tb_widgets.config = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
-    tb_widgets.record = new Fl_Light_Button(Xpos, Ypos, Width+22, Height); Xpos += Width + 5;
+    tb_widgets.record = new Fl_Light_Button(Xpos, Ypos, Width+22, Height); Xpos += Width+22+5;
+    Fl_Box *bar_rest = new Fl_Box(FL_DOWN_BOX, Xpos, Ypos, bar->w()-Xpos, Height, "rest");
+    resizable(bar_rest); // protect buttons from resizing
     // icons
-    //tb_widgets.start->label("@>"); // start icon
-    //tb_widgets.pause->label("@||"); // pause icon
-    //tb_widgets.stop->label("@square"); // stop icon
     Fl_Pixmap *icon_start = new Fl_Pixmap(pixmap_icon_play);
     Fl_Pixmap *icon_pause = new Fl_Pixmap(pixmap_icon_pause);
     Fl_Pixmap *icon_stop = new Fl_Pixmap(pixmap_icon_stop);
@@ -128,6 +121,7 @@ Fl_Group(Xpos, Ypos, Width, Height)
     tb_widgets.pause->tooltip("Pause Simulation");
     tb_widgets.stop->tooltip("Stop Simulation");
     tb_widgets.config->tooltip("Settings");
+    tb_widgets.record->tooltip("Recording");
     // types of buttons
     tb_widgets.start->type(FL_RADIO_BUTTON); // start & pause are mutually exclusive
     tb_widgets.pause->type(FL_RADIO_BUTTON);
@@ -139,10 +133,10 @@ Fl_Group(Xpos, Ypos, Width, Height)
     //  start & pause buttons will be released when stop button is pressed
     tb_widgets.stop->callback(cb_button_stop, (void*)&tb_widgets);
     tb_widgets.config->callback(cb_button_config, (void*)win);
+    end();
 }
 
-/******* Configuration Dialog *******/
-
+/*------- Configuration Dialog -------*/
 void cb_tabs_ConfigDlg(Fl_Widget *w, void*)
 {
     Fl_Tabs *tabs = (Fl_Tabs*)w;

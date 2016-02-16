@@ -87,7 +87,7 @@ target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
 # link external FLTK library
 target_link_libraries(${PRJ_NAME} fltk)
 # link external OpenGL library
-#target_link_libraries(${PRJ_NAME} fltk_gl)
+target_link_libraries(${PRJ_NAME} fltk_gl)
 # link external image library
 target_link_libraries(${PRJ_NAME} fltk_images)
 

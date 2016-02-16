@@ -12,7 +12,7 @@
 int main(int argc, char **argv) 
 {
     // Create a window for simulation
-    SimUI ui(1000, 600, "Robot Active Olfaction Simulation");
+    SimUI ui(800, 600, "Robot Active Olfaction Simulation");
     // Run and return    
     return Fl::run();
 }
