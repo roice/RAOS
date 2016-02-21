@@ -41,25 +41,27 @@ SimUI::SimUI(int width, int height, const char* title=0)
 {
     /* Main Window, control panel */
     Fl_Double_Window *panel = new Fl_Double_Window(width, height, title);
-    // Set color of window
-    panel->color(FL_WHITE);
-    /* begin adding children */
-    panel->begin();
-
+    panel->resizable(panel);
+   
     // Add tool bar, it's width is equal to panel's
-    ToolBar *tool = new ToolBar(0, 0, panel->w(), 34, (void*)panel);
+    ToolBar *tool = new ToolBar(0, 0, width, 34, (void*)panel);
     tool->clear_visible_focus(); //just use mouse, no TABs
     // protect buttons from resizing
     Fl_Box *r = new Fl_Box(FL_NO_BOX, width, tool->h(), 0, height-tool->h(), "right_border");
     r->hide();
     panel->resizable(r);
 
-    MyGlWindow* mygl = new MyGlWindow(0, tool->h(), width, height-tool->h(), "Texture Test");
-
+    /* Add simulator view */
+    panel->show(); // glut will die unless parent window visible
+    /* begin adding children */
+    panel->begin(); 
+    glutInitWindowSize(width-20, height-tool->h()-20);
+    glutInitWindowPosition(panel->x()+10, panel->y()); // place it inside parent window, panel->y()=44?
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
+    glutCreateWindow("Fractal Planet?");
     /* end adding children */
     panel->end();
-    // Display the window
-    panel->show();
+    panel->resizable(glut_window);
 };
 
 /*------- ToolBar -------*/
@@ -186,3 +188,5 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
     end();
     show();
 }
+
+/* End of SimUI.cxx */
