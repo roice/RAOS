@@ -1,7 +1,7 @@
 /*
  * Main function of Simulator
  *
- * Author: Roice (Bing LUO)
+ * Author: Roice (LUO Bing)
  * Date: 2014-11-21 create this file (previous fgcsgdm)
  *       2016-02-01 create this file (RAOS)
  */

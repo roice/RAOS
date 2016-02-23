@@ -6,9 +6,28 @@
  * Date: 2016-02-01 create this file
  */
 
+/* FLTK */
+#include <FL/Fl.H>
+#include <FL/Fl_Double_Window.H>
+#include <FL/Fl_Group.H>
+#include <FL/Fl_Button.H>
+#include <FL/Fl_Box.H>
+#include <FL/Fl_Light_Button.H>
+#include <FL/Fl_Pixmap.H>
+#include <FL/Fl_Tabs.H>
+#include <FL/fl_ask.H>
+#include <FL/Fl_Shared_Image.H>
+#include <FL/Fl_PNG_Image.H>
+/* OpenGL */
+#include <FL/Fl_Gl_Window.H>
+#include <FL/gl.h>
+#include <FL/glut.H>
+/* RAOS */
 #include "SimUI.h"
 #include "icons/icons.h" // pixmap icons used in Tool bar
 #include "SimView.h" // 3D view of RAO
+
+
 
 /*------- Class declarations -------*/
 struct ToolBar_Widgets
@@ -56,7 +75,7 @@ SimUI::SimUI(int width, int height, const char* title=0)
     /* begin adding children */
     panel->begin(); 
     glutInitWindowSize(width-20, height-tool->h()-20);
-    glutInitWindowPosition(panel->x()+10, panel->y()); // place it inside parent window, panel->y()=44?
+    glutInitWindowPosition(panel->x()+10, tool->h()+10); // place it inside parent window, panel->y()=44?
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutCreateWindow("Fractal Planet?");
     /* end adding children */

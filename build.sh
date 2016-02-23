@@ -7,7 +7,7 @@
 # Get the absolute TOP path of this project
 prjtop=$(cd "$(dirname "$0")"; pwd)
 echo "Absolute path of project top directory is: "$prjtop
-sleep 5
+sleep 1
 
 echo "Start Compiling 3d party soft ..."
 echo "Start Compiling FLTK..."
@@ -27,4 +27,4 @@ mkdir build
 cd build
 cmake ..
 make
-make install
+#make install
