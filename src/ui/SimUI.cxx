@@ -74,13 +74,22 @@ SimUI::SimUI(int width, int height, const char* title=0)
     panel->show(); // glut will die unless parent window visible
     /* begin adding children */
     panel->begin(); 
-    glutInitWindowSize(width-20, height-tool->h()-20);
-    glutInitWindowPosition(panel->x()+10, tool->h()+10); // place it inside parent window, panel->y()=44?
+    glutInitWindowSize(width-10, height-tool->h()-10);// be consistent with SimView_init
+    glutInitWindowPosition(panel->x()+5, tool->h()+5); // place it inside parent window
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-    glutCreateWindow("Fractal Planet?");
+    glutCreateWindow("Simulation view");
     /* end adding children */
     panel->end();
-    panel->resizable(glut_window);
+    panel->resizable(glut_window); 
+ 
+    // config callbacks for glut
+    // these functions will not be called immediately
+    glutReshapeFunc(SimView_reshape);
+    glutDisplayFunc(SimView_redraw);
+    glutVisibilityFunc(SimView_visible);
+
+    // init Sim view
+    SimView_init(width-10, height-tool->h()-10);// pass gl window size
 };
 
 /*------- ToolBar -------*/

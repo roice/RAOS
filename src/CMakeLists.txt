@@ -64,8 +64,10 @@ include(${FLTK_USE_FILE})
 
 #---- source files include path settings ----
 # add source directory into include path
-# add user interface dir to search for header files
+#   add user interface dir to search for header files
 include_directories(${PROJECT_SOURCE_DIR}/ui)
+#   add model dir to search for header files
+include_directories(${PROJECT_SOURCE_DIR}/model)
 
 #---- library files path settings ----
 # add library dir into lib path
@@ -74,14 +76,20 @@ link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/fltk-1.3.3/build/lib)
 
 #---- start compiling ----
 set(LIB_UI_NAME ui)
+set(LIB_MODEL_NAME model) # models
+# make a library from quadrotor model files
+add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx)
 # make a library from ui files
-add_library(${LIB_UI_NAME} ui/SimUI.cxx)
+add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
+    ui/draw/DrawScene.cxx ui/draw/draw_qr.cxx)
 # compile main file
 add_executable(${PRJ_NAME} SimMain.cxx)
-add_dependencies(${PRJ_NAME} ${LIB_UI_NAME})
+add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 
 #---- start linking ----
 # Note: the former line depends on the next line
+# link model library created above
+target_link_libraries(${PRJ_NAME} ${LIB_MODEL_NAME})
 # link GUI library created above
 target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
 # link external FLTK library

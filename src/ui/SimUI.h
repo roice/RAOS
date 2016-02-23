@@ -5,7 +5,6 @@ class SimUI
 {
 public:
     SimUI(int width, int height, const char* title);
-    //Fl_Double_Window *panel;
 };
 
 #endif

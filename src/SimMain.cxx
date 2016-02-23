@@ -19,7 +19,7 @@ int main(int, char**) {
 
 #include "FL/Fl.H"
 #include "SimUI.h" // control panel and GL view
-
+#include "SimModel.h" // models
 
 /***************************************************************/
 /**************************** MAIN *****************************/
@@ -27,8 +27,12 @@ int main(int, char**) {
 
 int main(int argc, char **argv) 
 {
+    /* initialize simulator stuff (quadrotor, plume, etc.) */
+  	SimModel_init();
+    
     // Create a window for simulation
     SimUI ui(800, 600, "Robot Active Olfaction Simulation");
+    
     // Run and return    
     return Fl::run();
 }
