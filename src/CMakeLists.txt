@@ -64,6 +64,8 @@ include(${FLTK_USE_FILE})
 
 #---- source files include path settings ----
 # add source directory into include path
+#   add root dir to search for header files
+include_directories(${PROJECT_SOURCE_DIR})
 #   add user interface dir to search for header files
 include_directories(${PROJECT_SOURCE_DIR}/ui)
 #   add model dir to search for header files
@@ -83,7 +85,7 @@ add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx)
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/DrawScene.cxx ui/draw/draw_qr.cxx)
 # compile main file
-add_executable(${PRJ_NAME} SimMain.cxx)
+add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 
 #---- start linking ----

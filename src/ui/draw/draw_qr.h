@@ -11,12 +11,20 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-02-23 create this file
  */
-
 #ifndef DRAW_QR_H
 #define DRAW_QR_H
 
-#include "qrmod.h" // quad model, for qrstate_t
+/* select visulization level */
+#define SIMPLE_VISUAL_QR // planar quad
+//#define NORMAL_VISUAL_QR // 3D quad
 
+
+#if defined(SIMPLE_VISUAL_QR)
+#include "qrmod.h" // quad model, for qrstate_t
 void draw_qr(qrstate_t qrstate);
+#elif defined(NORMAL_VISUAL_QR)
+void draw_qr_3d(qrstate_t qrstate);
+#endif
 
 #endif
+/* End of draw_qr.h */

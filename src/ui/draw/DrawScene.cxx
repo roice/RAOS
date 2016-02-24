@@ -28,7 +28,7 @@ GLfloat position1[4] = { -2.0, 100.5, 1.0, 0.0 };
  * draw everything (environment + quad rotor)
  *--------------------------------------------------------------------------
  */
-void DrawScene(void)
+void DrawScene(qrstate_t qrstate)
 {
     /* GL stuff */
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, localAmb);
@@ -44,9 +44,8 @@ void DrawScene(void)
   	glLightfv(GL_LIGHT1, GL_POSITION, position1);
   	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
   	glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
-  	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  	glLoadIdentity();
 
     /* draw quadrotor */
-    draw_qr(g_quad_state);  	
+    draw_qr(qrstate);  	
 }
+/* End of DrawScene.cxx */

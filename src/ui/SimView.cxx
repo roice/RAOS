@@ -18,22 +18,23 @@
 #include <time.h> // for srand seeding and FPS calculation
 #include "agv.h" // eye movement
 #include "draw/DrawScene.h" // draw sim scene
+#include "SimModel.h"
 
 typedef enum { AXES } DisplayLists;
 
-// width and height of current window, for display function
-int win_width = 1;
-int win_height = 1;
+// width and height of current window, for redraw function
+static int sim_width = 1;
+static int sim_height = 1;
 
 void SimView_init(int width, int height)
 {
-    // update width/height of window
-    win_width = width;
-    win_height = height;
+    // set width/height of window
+    sim_width = width;
+    sim_height = height;
 
     agvInit(1); /* 1 cause we don't have our own idle */
 
-    agvMakeAxesList(AXES);
+    agvMakeAxesList(AXES);/* axes for debugging */
 
     /* Initialize GL stuff */
     glShadeModel(GL_FLAT);// or use GL_SMOOTH with more computation
@@ -45,13 +46,15 @@ void SimView_init(int width, int height)
   	glDisable(GL_ALPHA_TEST);
   	glMatrixMode(GL_PROJECTION);
   	glLoadIdentity();
-    gluPerspective(60.0, (GLdouble)win_width/win_height, 0.01, 100);
+    gluPerspective(60.0, (GLdouble)width/height, 0.01, 100);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 }
 
 void SimView_reshape(int w, int h)
 {
+    sim_width = w;
+    sim_height = h;
     glViewport(0, 0, w, h);
 }
 
@@ -66,31 +69,32 @@ void SimView_redraw(void)
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color buffer and depth buffer
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0, (GLdouble)win_width/win_height, 0.01, 100);
+    gluPerspective(60.0, (GLdouble)sim_width/sim_height, 0.01, 100);
     agvViewTransform();
-
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
 
     /* Begin drawing simulation scene */
-    DrawScene(); // draw sim scene
-
+    DrawScene(global_qrstate); // draw sim scene
     /* End drawing */
 
     if (true) glCallList(AXES);
 
+    /* for drawing FPS 2D label */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0.0, win_width, 0.0, win_height);
+    gluOrtho2D(0.0, sim_width, 0.0, sim_height);
 
     sprintf(buf, "FPS=%d", fps);
     glColor3f(1.0f, 1.0f, 1.0f);
     gl_font(FL_HELVETICA, 12);
     gl_draw(buf, 10, 10);
 
-  // Use glFinish() instead of glFlush() to avoid getting many frames
-  // ahead of the display (problem with some Linux OpenGL implementations...)
-    glFinish();
+    glutSwapBuffers(); // using two buffers mode
+
+    // Use glFinish() instead of glFlush() to avoid getting many frames
+    // ahead of the display (problem with some Linux OpenGL implementations...)
+    //glFinish();
 
     // Update frames-per-second
     fpscount ++;
@@ -113,3 +117,4 @@ void SimView_visible(int v)
         agvSetAllowIdle(0);
     }
 }
+/* End of SimView.cxx */

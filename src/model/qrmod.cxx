@@ -17,8 +17,6 @@
 
 #include "qrmod.h"
 
-qrstate_t g_quad_state; // global struct
-
 void qr_init(qrstate_t* qrstate, double z_at_gnd)
 {
   	qrstate->z_at_gnd = z_at_gnd;	/* position coordinate (earth axis z) */
@@ -61,6 +59,10 @@ void qr_init(qrstate_t* qrstate, double z_at_gnd)
     qrstate->sim_control.enable_gravity = 1;
     qrstate->sim_control.verbose = 0;
     qrstate->sim_control.pause = 0;
+
+    /* Mechanical structure (constant) */
+    qrstate->frame.size = 0.45; // default 450 mm
+    qrstate->frame.prop_radius = 0.10; // default 100 mm radius
 }
 
 /*--------------------------------------------------------------------------

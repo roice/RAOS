@@ -11,6 +11,12 @@
 #ifndef QR_MOD_H
 #define QR_MOD_H
 
+typedef struct
+{
+    float size; // distance between two diagonal motors
+    float prop_radius; // propeller radius
+} qrframe_t; // mechanical frame (constant)
+
 typedef struct {
     unsigned char enable_gravity;
     unsigned char verbose;
@@ -63,9 +69,9 @@ typedef struct {
 
     qrcontrol_t sim_control;
 
-} qrstate_t;
+    qrframe_t frame;
 
-extern qrstate_t g_quad_state; // global struct
+} qrstate_t;
 
 void qr_init(qrstate_t *qrstate, double z_at_gnd);
 //extern void update_euler(qrstate_t *qrstate, double p, double q, double r, int use_body_angles);
