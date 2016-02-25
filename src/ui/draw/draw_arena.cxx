@@ -86,8 +86,7 @@ static void draw_arena_basic(void)
     glPopAttrib();
 
     /* draw chimney (odor source), a cylinder */
-    GLUquadricObj * chimney_obj = NULL;
-    chimney_obj = gluNewQuadric();
+    GLUquadricObj * chimney_obj = gluNewQuadric();
     gluQuadricDrawStyle(chimney_obj, GLU_FILL);
     gluQuadricNormals(chimney_obj, GLU_SMOOTH);
 
