@@ -83,9 +83,10 @@ set(LIB_MODEL_NAME model) # models
 add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx)
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
-    ui/draw/DrawScene.cxx ui/draw/draw_qr.cxx)
+    ui/draw/DrawScene.cxx ui/draw/materials.cxx 
+    ui/draw/draw_qr.cxx ui/draw/draw_arena.cxx)
 # compile main file
-add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx)
+add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx SimConfig.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 
 #---- start linking ----

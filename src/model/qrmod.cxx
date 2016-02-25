@@ -16,12 +16,14 @@
 #include <stdlib.h>
 
 #include "qrmod.h"
+#include "SimConfig.h"
 
-void qr_init(qrstate_t* qrstate, double z_at_gnd)
+void qr_init(qrstate_t* qrstate)
 {
-  	qrstate->z_at_gnd = z_at_gnd;	/* position coordinate (earth axis z) */
+    /* load configs about quadrotor */
+    SimConfig_t *config = SimConfig_get_configs();
 
-	qrstate->t = 0;		/* simulation time */
+ 	qrstate->t = 0;		/* simulation time */
 
   	qrstate->u = 0;		/* airspeed (body axis x) */
   	qrstate->v = 0;		/* airspeed (body axis y) */
@@ -32,9 +34,12 @@ void qr_init(qrstate_t* qrstate, double z_at_gnd)
   	qrstate->phi = 0;	/* roll angle (body axis x) */
   	qrstate->theta = 0;	/* pitch angle (body axis y) */
   	qrstate->psi = 0;	/* yaw angle (body axis z) */
-  	qrstate->x = 0;		/* position coordinate (earth axis x) */
-  	qrstate->y = 0;		/* position coordinate (earth axis y) */
-  	qrstate->z = z_at_gnd;	/* position coordinate (earth axis z) */
+  	qrstate->x = 
+        config->robot.init_x; /* position coordinate (earth axis x) */
+  	qrstate->y = 
+        config->robot.init_y; /* position coordinate (earth axis y) */
+  	qrstate->z = 
+        config->robot.init_z; /* position coordinate (earth axis z) */
   	qrstate->mx = 0;
   	qrstate->my = 0;
 
@@ -44,7 +49,7 @@ void qr_init(qrstate_t* qrstate, double z_at_gnd)
   	qrstate->a2 = 0;	/* rotor 2 */
   	qrstate->a3 = 0;	/* rotor 3 */
   	qrstate->a4 = 0;	/* rotor 4 */
-  	qrstate->leds = 0;	/* reset leds */
+  	qrstate->leds = 1;	/* reset leds */
   	qrstate->tleds = 0;	/* reset led blink time */
 	
   	/* sensors 

@@ -13,3 +13,4 @@ Compilation:
 Dependencies:
 ----
 (1) OpenGL library<br>
+(2) boost

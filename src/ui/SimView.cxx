@@ -15,12 +15,12 @@
 
 #include <FL/glut.H>
 #include <FL/glu.h>
+#include <string.h>
 #include <time.h> // for srand seeding and FPS calculation
 #include "agv.h" // eye movement
 #include "draw/DrawScene.h" // draw sim scene
 #include "SimModel.h"
-
-typedef enum { AXES } DisplayLists;
+#include "SimConfig.h"
 
 // width and height of current window, for redraw function
 static int sim_width = 1;
@@ -34,8 +34,6 @@ void SimView_init(int width, int height)
 
     agvInit(1); /* 1 cause we don't have our own idle */
 
-    agvMakeAxesList(AXES);/* axes for debugging */
-
     /* Initialize GL stuff */
     glShadeModel(GL_FLAT);// or use GL_SMOOTH with more computation
     glClearColor(0.49, 0.62, 0.75, 0.0);
@@ -46,30 +44,31 @@ void SimView_init(int width, int height)
   	glDisable(GL_ALPHA_TEST);
   	glMatrixMode(GL_PROJECTION);
   	glLoadIdentity();
-    gluPerspective(60.0, (GLdouble)width/height, 0.01, 100);
+    gluPerspective(30.0, (GLdouble)width/height, 0.01, 1000);
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
+
+    /* init sim scene drawing */
+    DrawScene_init();
 }
 
 void SimView_reshape(int w, int h)
 {
+    // update width/height of window
     sim_width = w;
     sim_height = h;
+
     glViewport(0, 0, w, h);
 }
 
+static void draw_axes(void);// draw axes
+static void draw_fps_note(void);//draw FPS note
 void SimView_redraw(void)
 {
-    time_t curtime; // current time
-    char buf[255];
-    static time_t fpstime = 0;
-    static int fpscount = 0;
-    static int fps = 0;
-  
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // clear color buffer and depth buffer
+    /* change eye moving */
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(60.0, (GLdouble)sim_width/sim_height, 0.01, 100);
+    gluPerspective(30.0, (GLdouble)sim_width/sim_height, 0.01, 1000);
     agvViewTransform();
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
@@ -78,33 +77,17 @@ void SimView_redraw(void)
     DrawScene(global_qrstate); // draw sim scene
     /* End drawing */
 
-    if (true) glCallList(AXES);
+    /* draw axes at the left-down corner */
+    draw_axes();
 
-    /* for drawing FPS 2D label */
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    gluOrtho2D(0.0, sim_width, 0.0, sim_height);
-
-    sprintf(buf, "FPS=%d", fps);
-    glColor3f(1.0f, 1.0f, 1.0f);
-    gl_font(FL_HELVETICA, 12);
-    gl_draw(buf, 10, 10);
-
+    /* draw FPS note */
+    draw_fps_note();
+    
     glutSwapBuffers(); // using two buffers mode
 
     // Use glFinish() instead of glFlush() to avoid getting many frames
     // ahead of the display (problem with some Linux OpenGL implementations...)
-    //glFinish();
-
-    // Update frames-per-second
-    fpscount ++;
-    curtime = time(NULL);
-    if ((curtime - fpstime) >= 2)
-    {
-        fps      = (fps + fpscount / (curtime - fpstime)) / 2;
-        fpstime  = curtime;
-        fpscount = 0;
-    }
+    //glFinish(); 
 }
 
 void SimView_visible(int v)
@@ -115,6 +98,72 @@ void SimView_visible(int v)
     {
         glutIdleFunc(NULL);
         agvSetAllowIdle(0);
+    }
+}
+
+static void draw_axes(void)
+{
+    float ORG[3] = {0,0,0};
+    float XP[3] = {0,0,0}, YP[3] = {0,0,0};
+    /* get configs about arena size */
+    SimConfig_t *config = SimConfig_get_configs();
+    XP[0] = config->arena.w?config->arena.w+1:10;
+    YP[2] = config->arena.w?-(config->arena.w+1):-10;
+    
+    // draw x,y axes
+    glDisable(GL_LIGHTING);
+    {
+        glLineWidth(2.0);
+        glBegin(GL_LINES);
+        glColor3f(1,0,0);
+        glVertex3fv(ORG);
+        glVertex3fv(XP);    // X axis is red.
+        glColor3f(0,0,1);
+        glVertex3fv(ORG);
+        glVertex3fv(YP);    // y axis is blue.
+        glEnd();
+
+        // draw labels
+        const char *str_x = "X/East";
+        const char *str_y = "Y/North";
+        glDisable(GL_DEPTH_TEST);
+        glColor3f(0.3, 0.3, 0.3); // gray
+        glRasterPos3fv(XP);
+        gl_font(FL_HELVETICA_BOLD, 12); 
+        gl_draw(str_x, strlen(str_x));
+        glRasterPos3fv(YP); 
+        gl_draw(str_y, strlen(str_y));
+        glEnable(GL_DEPTH_TEST);
+    }glEnable(GL_LIGHTING);
+}
+
+static void draw_fps_note(void)
+{
+    time_t curtime; // current time
+    char buf[255];
+    static time_t fpstime = 0;
+    static int fpscount = 0;
+    static int fps = 0;
+
+    glDisable(GL_LIGHTING);
+    {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluOrtho2D(0.0, sim_width, 0.0, sim_height);
+        sprintf(buf, "FPS=%d", fps);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        gl_font(FL_HELVETICA, 12);
+        gl_draw(buf, 10, 10);
+    }glEnable(GL_LIGHTING);
+
+    // Update frames-per-second
+    fpscount ++;
+    curtime = time(NULL);
+    if ((curtime - fpstime) >= 2)
+    {
+        fps      = (fps + fpscount / (curtime - fpstime)) / 2;
+        fpstime  = curtime;
+        fpscount = 0;
     }
 }
 /* End of SimView.cxx */

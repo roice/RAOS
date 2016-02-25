@@ -12,7 +12,9 @@
 #include <FL/gl.h>
 
 #include "qrmod.h" // quad model, for qrstate_t
-#include "draw/draw_qr.h" // quad visulization
+#include "draw/draw_qr.h" // quad visualization
+#include "draw/draw_arena.h" // arena visualization
+#include "draw/materials.h" // create material lists
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
 GLfloat ambient0[4] = { 0.0, 0.0, 0.0, 1.0 };
@@ -44,8 +46,19 @@ void DrawScene(qrstate_t qrstate)
   	glLightfv(GL_LIGHT1, GL_POSITION, position1);
   	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse1);
   	glLightfv(GL_LIGHT1, GL_SPECULAR, specular1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  	glLoadIdentity();
+    glEnable(GL_LIGHTING); // default enable for the rest routines
+
+    /* draw arena */
+    draw_arena(SIM_ARENA_BASIC);
 
     /* draw quadrotor */
-    draw_qr(qrstate);  	
+    draw_qr(qrstate);
+}
+
+void DrawScene_init(void) // call before DrawScene
+{
+    create_materials();
 }
 /* End of DrawScene.cxx */

@@ -20,6 +20,7 @@ int main(int, char**) {
 #include "FL/Fl.H"
 #include "SimUI.h" // control panel and GL view
 #include "SimModel.h" // models
+#include "SimConfig.h" // settings
 
 /***************************************************************/
 /**************************** MAIN *****************************/
@@ -27,14 +28,21 @@ int main(int, char**) {
 
 int main(int argc, char **argv) 
 {
+    /* initialize sim settings */
+    SimConfig_restore();
+
     /* initialize simulator stuff (quadrotor, plume, etc.) */
   	SimModel_init();
     
     // Create a window for simulation
     SimUI ui(800, 600, "Robot Active Olfaction Simulation");
     
-    // Run and return    
-    return Fl::run();
+    // Run
+    Fl::run();
+
+    // save configs before closing
+    SimConfig_save();
+    return 0;
 }
 
 #endif

@@ -41,7 +41,7 @@
    /* Initial polar movement settings */
 #define INIT_POLAR_AZ  0.0
 #define INIT_POLAR_EL 30.0
-#define INIT_DIST      4.0
+#define INIT_DIST      30.0
 #define INIT_AZ_SPIN   0.5
 #define INIT_EL_SPIN   0.0
 
@@ -335,9 +335,9 @@ void agvHandleButton(int button, int state, int x, int y)
  //if (button > GLUT_RIGHT_BUTTON)return;
  if ((state == GLUT_DOWN) && ((button == 3) || (button == 4))) {
     // attempt to process scrollwheel as zoom in/out
-    float deltay = 0.25;
+    float deltay = 2.5;
     if (button == 3) {
-      deltay = (-0.25);
+      deltay = (-2.5);
     }
     downb = -1;
     downDist = EyeDist;

@@ -73,7 +73,7 @@ typedef struct {
 
 } qrstate_t;
 
-void qr_init(qrstate_t *qrstate, double z_at_gnd);
+void qr_init(qrstate_t *qrstate);
 //extern void update_euler(qrstate_t *qrstate, double p, double q, double r, int use_body_angles);
 //extern void qr_nextstate(qrstate_t *qrstate, double DT);
 
