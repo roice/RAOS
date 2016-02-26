@@ -29,15 +29,15 @@ static double RAD2DEG = 180 / PI;
 // simple planar
 static void draw_motor(double);
 static void draw_rotor(double);
-static void draw_qr_model(qrstate_t, int);
+static void draw_qr_model(qrstate_t*, int);
 static void draw_qr_mast(float);
 // normal 3d
 static void draw_motor_3d(double);
 static void draw_rotor_3d(double);
-static void draw_qr_model_3d(qrstate_t, int);
+static void draw_qr_model_3d(qrstate_t*, int);
 
 /* draw the quad rotor, simple planar */
-void draw_qr(qrstate_t qrstate)
+void draw_qr(qrstate_t* qrstate)
 {
     double phi, theta, psi;
 	double glX, glY, glZ;
@@ -48,12 +48,12 @@ void draw_qr(qrstate_t qrstate)
     		0.0, 0.0, 0.0, 1.0
   	};
     /* change from NASA airplane to OpenGL coordinates */
-  	glX = qrstate.x;
-	glZ = -qrstate.y;
-	glY = qrstate.z;
- 	phi = qrstate.phi;
-	theta = qrstate.theta;
-	psi = qrstate.psi;
+  	glX = qrstate->x;
+	glZ = -qrstate->y;
+	glY = qrstate->z;
+ 	phi = qrstate->phi;
+	theta = qrstate->theta;
+	psi = qrstate->psi;
 
     /* draw the quad rotor */
     glPushMatrix(); 
@@ -67,7 +67,7 @@ void draw_qr(qrstate_t qrstate)
   	glRotatef(RAD2DEG * theta, 0.0, 0.0, 1.0);
   	glRotatef(RAD2DEG * phi, 1.0, 0.0, 0.0);
     /* draw the mast of quad rotor, indicating up/down */
-    draw_qr_mast(qrstate.frame.size);
+    draw_qr_mast(qrstate->frame.size);
 
   	draw_qr_model(qrstate, 0);
       	
@@ -96,7 +96,7 @@ void draw_qr(qrstate_t qrstate)
 }
 
 /* draw the quad rotor, normal 3d */
-void draw_qr_3d(qrstate_t qrstate)
+void draw_qr_3d(qrstate_t* qrstate)
 {}
 
 // basic for draw_motor and draw_rotor
@@ -140,7 +140,7 @@ static void draw_rotor(double radius)
     draw_ring(radius*1.03, radius*0.97);
 }
 
-static void draw_qr_model(qrstate_t qrstate, int shadow)
+static void draw_qr_model(qrstate_t* qrstate, int shadow)
 {
     GLfloat qr_strut_r; // frame_size/2
     GLfloat qr_prop_r; // propeller radius
@@ -148,8 +148,8 @@ static void draw_qr_model(qrstate_t qrstate, int shadow)
     GLfloat qr_cover_s_x; // cover size * 2
     GLfloat qr_motor_s; // motor size (radius)
 
-    qr_strut_r = qrstate.frame.size/2;
-    qr_prop_r = qrstate.frame.prop_radius;
+    qr_strut_r = qrstate->frame.size/2;
+    qr_prop_r = qrstate->frame.prop_radius;
 
     glPushAttrib(GL_LIGHTING_BIT);
 
@@ -243,7 +243,7 @@ static void draw_qr_model(qrstate_t qrstate, int shadow)
 #endif
 
     /* "led" blinks, actually one propeller blinks */    
-	if (qrstate.leds && 0x0001 && !shadow) 
+	if (qrstate->leds && 0x0001 && !shadow) 
     {// turn on led (actually one motor)
         glDisable(GL_LIGHTING);
         glColor3f(1.0, 0.0, 0.0); /* red */

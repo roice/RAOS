@@ -31,6 +31,9 @@ GLfloat grass_ambuse[] =   { 0.0, 0.54, 0.0, 0.1 };
 GLfloat grass_specular[] = { 0, 0, 0, 1.0 };
 GLfloat grass_shininess[] = { 0 };
 
+GLfloat smoke_ambuse[] =   { 0.0, 0.0, 0.0, 0.3 };
+GLfloat smoke_specular[] = { 0, 0, 0, 1.0 };
+GLfloat smoke_shininess[] = { 0 };
 /* functions to create different materials */
 static void create_land_material(void)
 {
@@ -77,6 +80,15 @@ static void create_grass_material(void)
     glEndList();
 }
 
+static void create_smoke_material(void)
+{
+    glNewList(SMOKE_MAT, GL_COMPILE);
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, smoke_ambuse);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, smoke_specular);
+      glMaterialfv(GL_FRONT, GL_SHININESS, smoke_shininess);
+    glEndList();
+}
+
 void create_materials(void)
 {
     create_land_material();
@@ -84,6 +96,7 @@ void create_materials(void)
     create_shadow_material();
     create_cement_material();
     create_grass_material();
+    create_smoke_material();
 }
 
 /* End of materials.cxx */

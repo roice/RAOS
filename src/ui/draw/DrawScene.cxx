@@ -11,9 +11,10 @@
 
 #include <FL/gl.h>
 
-#include "qrmod.h" // quad model, for qrstate_t
+#include "SimModel.h"
 #include "draw/draw_qr.h" // quad visualization
 #include "draw/draw_arena.h" // arena visualization
+#include "draw/draw_plume.h" // plume visual
 #include "draw/materials.h" // create material lists
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
@@ -30,7 +31,7 @@ GLfloat position1[4] = { -2.0, 100.5, 1.0, 0.0 };
  * draw everything (environment + quad rotor)
  *--------------------------------------------------------------------------
  */
-void DrawScene(qrstate_t qrstate)
+void DrawScene(void)
 {
     /* GL stuff */
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, localAmb);
@@ -54,7 +55,10 @@ void DrawScene(qrstate_t qrstate)
     draw_arena(SIM_ARENA_BASIC);
 
     /* draw quadrotor */
-    draw_qr(qrstate);
+    draw_qr(SimModel_get_qrstate());
+
+    /* draw plume */
+    draw_plume();
 }
 
 void DrawScene_init(void) // call before DrawScene

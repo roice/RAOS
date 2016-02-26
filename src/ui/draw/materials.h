@@ -9,7 +9,7 @@
  * Date: 2016-02-24 create this file
  */
 
-typedef enum {LAND_MAT, STEEL_MAT, CEMENT_MAT, GRASS_MAT, SHADOW_MAT} DisplayLists;
+typedef enum {LAND_MAT, STEEL_MAT, CEMENT_MAT, GRASS_MAT, SMOKE_MAT, SHADOW_MAT} DisplayLists;
 
 void create_materials(void);
 

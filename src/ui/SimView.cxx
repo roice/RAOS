@@ -19,7 +19,6 @@
 #include <time.h> // for srand seeding and FPS calculation
 #include "agv.h" // eye movement
 #include "draw/DrawScene.h" // draw sim scene
-#include "SimModel.h"
 #include "SimConfig.h"
 
 // width and height of current window, for redraw function
@@ -74,7 +73,7 @@ void SimView_redraw(void)
     glLoadIdentity();
 
     /* Begin drawing simulation scene */
-    DrawScene(global_qrstate); // draw sim scene
+    DrawScene(); // draw sim scene
     /* End drawing */
 
     /* draw axes at the left-down corner */
@@ -107,8 +106,8 @@ static void draw_axes(void)
     float XP[3] = {0,0,0}, YP[3] = {0,0,0};
     /* get configs about arena size */
     SimConfig_t *config = SimConfig_get_configs();
-    XP[0] = config->arena.w?config->arena.w+1:10;
-    YP[2] = config->arena.w?-(config->arena.w+1):-10;
+    XP[0] = config->arena.w?config->arena.w/2.0+1:5;
+    YP[2] = config->arena.l?-(config->arena.l/2.0+1):-5;
     
     // draw x,y axes
     glDisable(GL_LIGHTING);

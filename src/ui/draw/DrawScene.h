@@ -21,7 +21,7 @@
 
 #include "qrmod.h" // quad model, for qrstate_t
 
-void DrawScene(qrstate_t);
+void DrawScene();
 void DrawScene_init();
 
 #endif

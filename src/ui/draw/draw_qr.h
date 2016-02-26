@@ -21,9 +21,9 @@
 
 #if defined(SIMPLE_VISUAL_QR)
 #include "qrmod.h" // quad model, for qrstate_t
-void draw_qr(qrstate_t qrstate);
+void draw_qr(qrstate_t* qrstate);
 #elif defined(NORMAL_VISUAL_QR)
-void draw_qr_3d(qrstate_t qrstate);
+void draw_qr_3d(qrstate_t* qrstate);
 #endif
 
 #endif

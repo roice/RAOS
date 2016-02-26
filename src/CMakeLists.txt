@@ -80,11 +80,12 @@ link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/fltk-1.3.3/build/lib)
 set(LIB_UI_NAME ui)
 set(LIB_MODEL_NAME model) # models
 # make a library from quadrotor model files
-add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx)
+add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx
+    model/plume.cxx)
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/DrawScene.cxx ui/draw/materials.cxx 
-    ui/draw/draw_qr.cxx ui/draw/draw_arena.cxx)
+    ui/draw/draw_qr.cxx ui/draw/draw_arena.cxx ui/draw/draw_plume.cxx)
 # compile main file
 add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx SimConfig.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})

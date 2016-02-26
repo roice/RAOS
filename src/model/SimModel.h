@@ -13,9 +13,8 @@
 
 #include "qrmod.h"
 
-extern qrstate_t global_qrstate;
-
 void SimModel_init(void);
+qrstate_t* SimModel_get_qrstate(void);
 
 #endif
 /* End of SimModel.h */
