@@ -18,6 +18,8 @@
 #include <FL/fl_ask.H>
 #include <FL/Fl_Shared_Image.H>
 #include <FL/Fl_PNG_Image.H>
+#include <FL/Fl_Value_Input.H>
+#include <FL/Fl_Value_Slider.H>
 /* OpenGL */
 #include <FL/Fl_Gl_Window.H>
 #include <FL/gl.h>
@@ -181,33 +183,103 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
     begin();
 
     // Tabs
-    Fl_Tabs *tabs = new Fl_Tabs(5, 5, w()-10, h()-10);
+    int t_x = 5, t_y = 5, t_w = w()-10, t_h = h()-10;
+    Fl_Tabs *tabs = new Fl_Tabs(t_x, t_y, t_w, t_h);
     {
         tabs->callback(cb_tabs_ConfigDlg); // callback func when switch tabs
-        // Tab Flow
-        Fl_Group *flow = new Fl_Group(20, 30, w()-10-20, h()-10-30,"Flow");
+        // Tab Scenario
+        Fl_Group *scenario = new Fl_Group(t_x,t_y+25,t_w,t_h-25,"Scenario");
         {
             // color of this tab
-            flow->color(9);
-            flow->selection_color(9);
-            /*
-            Fl_Button *b1 = new Fl_Button(x(), y()+40, 90,25,"Button A1");
-            b1->color(88+1);
-            Fl_Button *b2 = new Fl_Button(x(), y()+70, 90,25,"Button A2");
-            b2->color(88+2);
-            Fl_Button *b3 = new Fl_Button(x(), y()+100, 90,25,"Button A3");
-            b3->color(88+3);
-            */
+            scenario->color(0xe8e8e800); // light milk tea
+            scenario->selection_color(0xe8e8e800); // light milk tea
+            // Arena
+            Fl_Box *arena = new Fl_Box(t_x+10, t_y+25+10, 180, 130,"Arena");
+            arena->box(FL_PLASTIC_UP_FRAME);
+            arena->labelsize(16);
+            arena->labelfont(FL_COURIER_BOLD_ITALIC);
+            arena->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+            // Arena width/length/height
+            Fl_Value_Input *arena_w = new Fl_Value_Input(t_x+10+60,t_y+25+10+30,80,25,"Width");
+            Fl_Value_Input *arena_l = new Fl_Value_Input(t_x+10+60,t_y+25+10+60,80,25,"Length");
+            Fl_Value_Input *arena_h = new Fl_Value_Input(t_x+10+60,t_y+25+10+90,80,25,"Height");
+            new Fl_Box(t_x+10+60+80,t_y+25+10+30, 20, 25, "m");
+            new Fl_Box(t_x+10+60+80,t_y+25+10+60, 20, 25, "m");
+            new Fl_Box(t_x+10+60+80,t_y+25+10+90, 20, 25, "m");
+            // Source
+            Fl_Box *source = new Fl_Box(t_x+10+190, t_y+25+10, 180, 130,"Source Position");
+            source->box(FL_PLASTIC_UP_FRAME);
+            source->labelsize(16);
+            source->labelfont(FL_COURIER_BOLD_ITALIC);
+            source->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+            // Source pos
+            Fl_Value_Slider *source_x = new Fl_Value_Slider(t_x+10+210,t_y+25+10+30,140,25,"X");
+            Fl_Value_Slider *source_y = new Fl_Value_Slider(t_x+10+210,t_y+25+10+60,140,25,"Y");
+            Fl_Value_Slider *source_z = new Fl_Value_Slider(t_x+10+210,t_y+25+10+90,140,25,"Z");
+            source_x->labelsize(16);
+            source_y->labelsize(16);
+            source_z->labelsize(16);
+            source_x->type(FL_HOR_NICE_SLIDER);
+            source_y->type(FL_HOR_NICE_SLIDER);
+            source_z->type(FL_HOR_NICE_SLIDER);
+            source_x->align(Fl_Align(FL_ALIGN_LEFT));
+            source_y->align(Fl_Align(FL_ALIGN_LEFT));
+            source_z->align(Fl_Align(FL_ALIGN_LEFT));
+            new Fl_Box(t_x+10+210+140,t_y+25+10+30, 20, 25, "m");
+            new Fl_Box(t_x+10+210+140,t_y+25+10+60, 20, 25, "m");
+            new Fl_Box(t_x+10+210+140,t_y+25+10+90, 20, 25, "m");
+        }
+        scenario->end();
+        // Tab Flow
+        Fl_Group *flow = new Fl_Group(t_x,t_y+25,t_w,t_h-25,"Flow");
+        {
+            // color of this tab
+            flow->color(0xe0ffff00); // light blue
+            flow->selection_color(0xe0ffff00); // light blue
+
+            // Mean wind velocity
+            Fl_Box *m_wind = new Fl_Box(t_x+10, t_y+25+10, 370, 130,"Mean Wind Vel");
+            m_wind->box(FL_PLASTIC_UP_FRAME);
+            m_wind->labelsize(16);
+            m_wind->labelfont(FL_COURIER_BOLD_ITALIC);
+            m_wind->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+            // Mean wind velocity x/y/z components
+            Fl_Value_Slider *m_wind_x = new Fl_Value_Slider(t_x+10+30,t_y+25+10+30,300,25,"X");
+            Fl_Value_Slider *m_wind_y = new Fl_Value_Slider(t_x+10+30,t_y+25+10+60,300,25,"Y");
+            Fl_Value_Slider *m_wind_z = new Fl_Value_Slider(t_x+10+30,t_y+25+10+90,300,25,"Z");
+            m_wind_x->labelsize(16);
+            m_wind_y->labelsize(16);
+            m_wind_z->labelsize(16);
+            m_wind_x->type(FL_HOR_NICE_SLIDER);
+            m_wind_y->type(FL_HOR_NICE_SLIDER);
+            m_wind_z->type(FL_HOR_NICE_SLIDER);
+            m_wind_x->align(Fl_Align(FL_ALIGN_LEFT));
+            m_wind_y->align(Fl_Align(FL_ALIGN_LEFT));
+            m_wind_z->align(Fl_Align(FL_ALIGN_LEFT));
+            m_wind_x->bounds(0, 10); // 0~10 m/s
+            m_wind_y->bounds(0, 10);
+            m_wind_z->bounds(0, 10);
+            new Fl_Box(t_x+10+30+300,t_y+25+10+30, 30, 25, "m/s");
+            new Fl_Box(t_x+10+30+300,t_y+25+10+60, 30, 25, "m/s");
+            new Fl_Box(t_x+10+30+300,t_y+25+10+90, 30, 25, "m/s");
         }
         flow->end();
         // Tab Plume
-        Fl_Group *plume = new Fl_Group(20, 30, w()-10-20, h()-10-30,"Plume");
+        Fl_Group *plume = new Fl_Group(t_x,t_y+25,t_w,t_h-25,"Plume");
         {
             // color of this tab
-            plume->color(8);
-            plume->selection_color(8);
+            plume->color(0xeeee0000); // light yellow+green (chlorine)
+            plume->selection_color(0xeeee0000); // light yellow+green
         }
         plume->end();
+        // Tab Robot
+        Fl_Group *robot = new Fl_Group(t_x,t_y+25,t_w,t_h-25,"Robot");
+        {
+            // color of this tab
+            robot->color(0xa8a8a800); // light yellow+green (chlorine)
+            robot->selection_color(0xa8a8a800); // light yellow+green
+        }
+        robot->end();
     }
     // Make sure default tab has same color as its group
     tabs->selection_color( (tabs->value())->color() );
