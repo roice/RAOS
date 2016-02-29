@@ -99,4 +99,18 @@ void create_materials(void)
     create_smoke_material();
 }
 
+// changeable smoke material
+void SimMaterial_smoke(float c)
+{// 0.0 <= c <= 1.0
+    if (c <= 0.)
+        smoke_ambuse[3] = 0.01;
+    else if (c >= 1.)
+        smoke_ambuse[3] = 1.0;
+    else
+        smoke_ambuse[3] = c;
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, smoke_ambuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, smoke_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, smoke_shininess);
+}
+
 /* End of materials.cxx */

@@ -15,8 +15,5 @@
 #define SIMVIEW_H
 
 void SimView_init(int, int);
-void SimView_reshape(int, int);
-void SimView_redraw(void);
-void SimView_visible(int);
 
 #endif

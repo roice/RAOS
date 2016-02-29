@@ -12,5 +12,5 @@
 typedef enum {LAND_MAT, STEEL_MAT, CEMENT_MAT, GRASS_MAT, SMOKE_MAT, SHADOW_MAT} DisplayLists;
 
 void create_materials(void);
-
+void SimMaterial_smoke(float);
 /* End of materials.h */

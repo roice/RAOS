@@ -19,6 +19,7 @@ typedef struct {
     float x;
     float y;
     float z;
+    float r;
 }FilaState_t; // struct type of the state of a single filament
 
 std::vector<FilaState_t>* plume_get_fila_state(void);

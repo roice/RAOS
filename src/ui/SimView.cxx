@@ -20,38 +20,13 @@
 #include "agv.h" // eye movement
 #include "draw/DrawScene.h" // draw sim scene
 #include "SimConfig.h"
+#include "plume.h"
 
 // width and height of current window, for redraw function
 static int sim_width = 1;
 static int sim_height = 1;
 
-void SimView_init(int width, int height)
-{
-    // set width/height of window
-    sim_width = width;
-    sim_height = height;
-
-    agvInit(1); /* 1 cause we don't have our own idle */
-
-    /* Initialize GL stuff */
-    glShadeModel(GL_FLAT);// or use GL_SMOOTH with more computation
-    glClearColor(0.49, 0.62, 0.75, 0.0);
-  	glClearDepth(1.0f);
-  	glEnable(GL_DEPTH_TEST);// can disable for lower computation
-  	glDepthFunc(GL_LEQUAL);
-  	glDisable(GL_BLEND);// cause GL_DEPTH_TEST enabled
-  	glDisable(GL_ALPHA_TEST);
-  	glMatrixMode(GL_PROJECTION);
-  	glLoadIdentity();
-    gluPerspective(30.0, (GLdouble)width/height, 0.01, 1000);
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-
-    /* init sim scene drawing */
-    DrawScene_init();
-}
-
-void SimView_reshape(int w, int h)
+static void SimView_reshape(int w, int h)
 {
     // update width/height of window
     sim_width = w;
@@ -62,7 +37,7 @@ void SimView_reshape(int w, int h)
 
 static void draw_axes(void);// draw axes
 static void draw_fps_note(void);//draw FPS note
-void SimView_redraw(void)
+static void SimView_redraw(void)
 {
     /* change eye moving */
     glMatrixMode(GL_PROJECTION);
@@ -89,7 +64,7 @@ void SimView_redraw(void)
     //glFinish(); 
 }
 
-void SimView_visible(int v)
+static void SimView_visible(int v)
 {
     if (v == GLUT_VISIBLE)
         agvSetAllowIdle(1);
@@ -164,5 +139,45 @@ static void draw_fps_note(void)
         fpstime  = curtime;
         fpscount = 0;
     }
+}
+
+static void SimView_idle(void) {
+    // update models
+    plume_update();
+    // update view
+    if (agvMoving) agvMove();
+    SimView_redraw();
+}
+
+void SimView_init(int width, int height)
+{
+    // set width/height of window
+    sim_width = width;
+    sim_height = height;
+
+    agvInit(0); /* 0 cause we have our own idle */
+    // config callbacks for glut
+    //  these functions will not be called immediately
+    glutReshapeFunc(SimView_reshape);
+    glutDisplayFunc(SimView_redraw);
+    glutVisibilityFunc(SimView_visible);
+    glutIdleFunc(SimView_idle);
+
+    /* Initialize GL stuff */
+    glShadeModel(GL_FLAT);// or use GL_SMOOTH with more computation
+    glClearColor(0.49, 0.62, 0.75, 0.0);
+  	glClearDepth(1.0f);
+  	glEnable(GL_DEPTH_TEST);// can disable for lower computation
+  	glDepthFunc(GL_LEQUAL);
+  	glDisable(GL_BLEND);// cause GL_DEPTH_TEST enabled
+  	glDisable(GL_ALPHA_TEST);
+  	glMatrixMode(GL_PROJECTION);
+  	glLoadIdentity();
+    gluPerspective(30.0, (GLdouble)width/height, 0.01, 1000);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    /* init sim scene drawing */
+    DrawScene_init();
 }
 /* End of SimView.cxx */

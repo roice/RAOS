@@ -19,7 +19,7 @@
 void draw_plume(void)
 {
     std::vector<FilaState_t> *fs = plume_get_fila_state();
-    
+   
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     for (int i = 0; i < fs->size(); i++) // for each filament
@@ -27,8 +27,8 @@ void draw_plume(void)
         glPushMatrix(); 
         glTranslatef(fs->at(i).x, fs->at(i).z, -fs->at(i).y);
         glPushAttrib(GL_LIGHTING_BIT);
-        glCallList(SMOKE_MAT);
-        glutSolidSphere(1.0, 8, 3);
+        SimMaterial_smoke(1.0-fs->at(i).r);
+        glutSolidSphere(fs->at(i).r, 8, 3);
         glPopAttrib();
         glPopMatrix();
     }
