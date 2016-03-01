@@ -15,8 +15,8 @@
 
 #include <math.h>
 #include <FL/gl.h>
-#include "qrmod.h"
-#include "draw/materials.h" // use material lists
+#include "model/qrmod.h"
+#include "ui/draw/materials.h" // use material lists
 
 #ifndef PI
 #define PI 3.14159265

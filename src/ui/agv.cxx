@@ -27,7 +27,7 @@
 #    include <sys/time.h>
 #  endif // !WIN32 && !__EMX__
 
-#  include "agv.h"
+#  include "ui/agv.h"
 
 /* Some <math.h> files do not define M_PI... */
 #ifndef M_PI

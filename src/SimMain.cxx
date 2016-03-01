@@ -18,8 +18,8 @@ int main(int, char**) {
 // end of added block
 
 #include "FL/Fl.H"
-#include "SimUI.h" // control panel and GL view
-#include "SimModel.h" // models
+#include "ui/SimUI.h" // control panel and GL view
+#include "model/SimModel.h" // models
 #include "SimConfig.h" // settings
 
 /***************************************************************/

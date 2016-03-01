@@ -11,11 +11,11 @@
 
 #include <FL/gl.h>
 
-#include "SimModel.h"
-#include "draw/draw_qr.h" // quad visualization
-#include "draw/draw_arena.h" // arena visualization
-#include "draw/draw_plume.h" // plume visual
-#include "draw/materials.h" // create material lists
+#include "model/SimModel.h"
+#include "ui/draw/draw_qr.h" // quad visualization
+#include "ui/draw/draw_arena.h" // arena visualization
+#include "ui/draw/draw_plume.h" // plume visual
+#include "ui/draw/materials.h" // create material lists
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
 GLfloat ambient0[4] = { 0.0, 0.0, 0.0, 1.0 };

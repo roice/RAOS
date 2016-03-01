@@ -11,7 +11,7 @@
 #ifndef SIMMODEL_H
 #define SIMMODEL_H
 
-#include "qrmod.h"
+#include "model/qrmod.h"
 
 void SimModel_init(void);
 qrstate_t* SimModel_get_qrstate(void);

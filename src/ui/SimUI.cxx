@@ -25,9 +25,9 @@
 #include <FL/gl.h>
 #include <FL/glut.H>
 /* RAOS */
-#include "SimUI.h"
-#include "icons/icons.h" // pixmap icons used in Tool bar
-#include "SimView.h" // 3D RAO view
+#include "ui/SimUI.h"
+#include "ui/icons/icons.h" // pixmap icons used in Tool bar
+#include "ui/SimView.h" // 3D RAO view
 #include "SimConfig.h" // runtime RAOS configs
 
 /*------- Configuration Dialog -------*/

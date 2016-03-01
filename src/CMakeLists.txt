@@ -66,10 +66,6 @@ include(${FLTK_USE_FILE})
 # add source directory into include path
 #   add root dir to search for header files
 include_directories(${PROJECT_SOURCE_DIR})
-#   add user interface dir to search for header files
-include_directories(${PROJECT_SOURCE_DIR}/ui)
-#   add model dir to search for header files
-include_directories(${PROJECT_SOURCE_DIR}/model)
 
 #---- library files path settings ----
 # add library dir into lib path

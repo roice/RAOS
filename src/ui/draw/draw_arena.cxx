@@ -12,8 +12,8 @@
 #include <FL/gl.h>
 #include <FL/glu.h>
 #include <math.h> // floor()
-#include "draw_arena.h"
-#include "draw/materials.h" // use material lists
+#include "ui/draw/draw_arena.h"
+#include "ui/draw/materials.h" // use material lists
 #include "SimConfig.h" // get configurations about Arena
 
 /* declarations of local functions */

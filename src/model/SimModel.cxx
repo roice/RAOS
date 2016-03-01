@@ -4,9 +4,8 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-02-23 create this file (RAOS)
  */
-#include "stdio.h"
-#include "qrmod.h"
-#include "plume.h"
+#include "model/qrmod.h"
+#include "model/plume.h"
 
 /* global parameters for visualization */
 static qrstate_t qr_state;

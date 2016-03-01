@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h> // drand48 and srand48 on Linux
 #include <time.h> // for random seed
-#include "plume.h"
+#include "model/plume.h"
 #include "SimConfig.h"
 
 /*============== Filament Model ============*/

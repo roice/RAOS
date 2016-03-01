@@ -13,8 +13,8 @@
 #include <FL/gl.h>
 #include <FL/glut.H>
 #include <vector>
-#include "plume.h"
-#include "draw/materials.h"
+#include "model/plume.h"
+#include "ui/draw/materials.h"
 
 void draw_plume(void)
 {

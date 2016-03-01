@@ -17,10 +17,10 @@
 #include <FL/glu.h>
 #include <string.h>
 #include <time.h> // for srand seeding and FPS calculation
-#include "agv.h" // eye movement
-#include "draw/DrawScene.h" // draw sim scene
+#include "ui/agv.h" // eye movement
+#include "ui/draw/DrawScene.h" // draw sim scene
 #include "SimConfig.h"
-#include "plume.h"
+#include "model/plume.h"
 
 // width and height of current window, for redraw function
 static int sim_width = 1;

@@ -15,7 +15,7 @@
 #include <math.h>
 #include <stdlib.h>
 
-#include "qrmod.h"
+#include "model/qrmod.h"
 #include "SimConfig.h"
 
 void qr_init(qrstate_t* qrstate)

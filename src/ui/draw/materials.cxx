@@ -8,7 +8,7 @@
  */
 
 #include <FL/gl.h>
-#include "materials.h"
+#include "ui/draw/materials.h"
 
 /* material attribs */
 GLfloat land_ambuse[] =   { 0.4, 0.2, 0.0, 0.2 };
