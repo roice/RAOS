@@ -19,10 +19,10 @@ SHELL = /bin/sh
 PLAT = LINUX
 
 #-----------------------------------------------------------------------------
-# Libraries and includes
+# Libraries and includs
 #-----------------------------------------------------------------------------
  
-BLLIB = /Users/julie/Documents/Boulot/lapack-dev/lapack/trunk/blas_LINUX.a
+BLLIB = ../../BLAS-3.6.0/libblas.a
 CBLIB = ../lib/cblas_$(PLAT).a
 
 #-----------------------------------------------------------------------------
@@ -45,5 +45,5 @@ FFLAGS = -O3
 #-----------------------------------------------------------------------------
 
 ARCH = ar
-ARCHFLAGS = cr
-RANLIB = ranlib
+ARCHFLAGS = r
+RANLIB = echo

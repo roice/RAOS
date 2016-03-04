@@ -10,18 +10,18 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h> // drand48 and srand48 on Linux
+#include "cblas.h" // CBLAS for vector arithmetic
 #include "wake_rotor_cpu.h"
 
 #define PI 3.14159265358979323846
 
-
-static float BiotSavartInduction(void) {
-
-    float e = drand48();
-    float Gamma = drand48();
-    float h = drand48();
-    float a = drand48();
-    float b = drand48();
+// calculate induced velocity from a vortex line segment to a point
+//  a and b are endpoints of the vortex line segment
+//  p is the point
+static float BiotSavartInduction(float* a, float* b, float* p, float Gamma) {
+    float ap[3], bp[3], ab[3];
+    // get vectors AP, BP and AB
+    
     return Gamma/(4*PI);
     //return Gamma/(4*PI)*(h/sqrt(pow(0.01, 4)+pow(h, 4)))*(cos(a)+cos(b))*e;
 }
@@ -55,7 +55,7 @@ void RotorWake::update(void) {// update markers
     for (int i = 0; i < state.size(); i++) {// for each marker
         // calculate overall flow at this marker's position
         for (int i = 0; i < state.size(); i++) {
-            BiotSavartInduction();
+            //BiotSavartInduction();
         }
     }
     /* Step 2: marker maintainance */

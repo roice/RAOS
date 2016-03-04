@@ -64,13 +64,17 @@ include(${FLTK_USE_FILE})
 
 #---- source files include path settings ----
 # add source directory into include path
-#   add root dir to search for header files
+#   add root dir to search for header files of RAOS projects
 include_directories(${PROJECT_SOURCE_DIR})
+#   add cblas dir to search for cblas.h header for linear algebra
+include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/include)
 
 #---- library files path settings ----
 # add library dir into lib path
-# add fltk lib directory
+#   add fltk lib directory
 link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/fltk-1.3.3/build/lib)
+#   add blas and cblas lib dir
+link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/BLAS-3.6.0)
 
 #---- start compiling ----
 set(LIB_UI_NAME ui)
@@ -98,6 +102,9 @@ target_link_libraries(${PRJ_NAME} fltk)
 target_link_libraries(${PRJ_NAME} fltk_gl)
 # link external image library
 target_link_libraries(${PRJ_NAME} fltk_images)
+# link external blas library
+target_link_libraries(${PRJ_NAME} cblas)
+target_link_libraries(${PRJ_NAME} blas)
 
 # install
 install(TARGETS ${PRJ_NAME}
