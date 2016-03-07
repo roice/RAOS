@@ -75,6 +75,7 @@ include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/include)
 link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/fltk-1.3.3/build/lib)
 #   add blas and cblas lib dir
 link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/BLAS-3.6.0)
+link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/lib)
 
 #---- start compiling ----
 set(LIB_UI_NAME ui)
