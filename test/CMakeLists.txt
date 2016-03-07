@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 2.6)
 # ================ User can Access ==================
 #====================================================
 # Project name
-set(PRJ_NAME Wake)
+set(PRJ_NAME wake)
 # Add DEBUG defination to print out debug info
 add_definitions(-DDEBUG)
 # ===================================================
@@ -48,7 +48,7 @@ link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/BLAS-3.6.0)
 
 #---- start compiling ----
 # compile main file
-add_executable(${PRJ_NAME} wake_rotor_cpu.cxx)
+add_executable(${PRJ_NAME} model/wake_rotor_cpu.cxx)
 
 #---- start linking ----
 # Note: the former line depends on the next line

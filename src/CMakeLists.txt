@@ -81,7 +81,7 @@ set(LIB_UI_NAME ui)
 set(LIB_MODEL_NAME model) # models
 # make a library from quadrotor model files
 add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx
-    model/plume.cxx)
+    model/plume.cxx model/wake_rotor_cpu.cxx model/wake_qr_cpu.cxx)
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/DrawScene.cxx ui/draw/materials.cxx 
