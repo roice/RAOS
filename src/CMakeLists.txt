@@ -106,6 +106,7 @@ target_link_libraries(${PRJ_NAME} fltk_images)
 # link external blas library
 target_link_libraries(${PRJ_NAME} cblas)
 target_link_libraries(${PRJ_NAME} blas)
+target_link_libraries(${PRJ_NAME} gfortran)
 
 # install
 install(TARGETS ${PRJ_NAME}

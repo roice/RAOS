@@ -9,8 +9,6 @@
 #include "model/wake_rotor_cpu.h" // wake of a single rotor
 #include "model/wake_qr_cpu.h"
 
-
-
 void QRWake::init(qrstate_t qrstate)
 {
     // calculate each rotor's position and attitude

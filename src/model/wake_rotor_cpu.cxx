@@ -58,19 +58,81 @@ static void BiotSavartInduction(const float* a, const float* b, const float* p, 
     for (int i = 0; i < 3; i++)
         ind[i] = e[i]*scale;
 }
-
+/* rotate a vector with angles yaw pitch roll (degree)
+ * Right-Hand(counterclockwise)
+ * 
+ *                 cos(yaw)  -sin(yaw)  0
+ *    R_z(yaw)   = sin(yaw)  cos(yaw)   0
+ *                    0         0       1
+ *
+ *                 cos(pitch)   0     sin(pitch)
+ *    R_y(pitch) =     0        1         0
+ *                 -sin(pitch)  0     cos(pitch)
+ *
+ *                     1        0         0
+ *    R_x(roll)  =     0    cos(roll)  -sin(roll)
+ *                     0    sin(roll)   cos(roll)
+ *
+ *    R(yaw, pitch, roll) = R_z(yaw)R_y(pitch)R_x(roll)
+ *
+ *    out = R * vector + out
+ */
+static void rotate_vector(float* vector, float* out, float yaw, float pitch, float roll)
+{
+    // calculate rotation matrix
+    float sin_yaw = sin(yaw*PI/180.0);
+    float cos_yaw = cos(yaw*PI/180.0);
+    float sin_pitch = sin(pitch*PI/180.0);
+    float cos_pitch = cos(pitch*PI/180.0);
+    float sin_roll = sin(roll*PI/180.0);
+    float cos_roll = cos(roll*PI/180.0);
+    float R_x[9], R_y[9], R_z[9];
+    R_z[0] = cos_yaw;
+    R_z[1] = -sin_yaw;
+    R_z[2] = 0.0;
+    R_z[3] = sin_yaw;
+    R_z[4] = cos_yaw;
+    R_z[5] = 0.0;
+    R_z[6] = 0.0;
+    R_z[7] = 0.0;
+    R_z[8] = 1.0;
+    R_y[0] = cos_pitch;
+    R_y[1] = 0.0;
+    R_y[2] = sin_pitch;
+    R_y[3] = 0.0;
+    R_y[4] = 1.0;
+    R_y[5] = 0.0;
+    R_y[6] = -sin_pitch;
+    R_y[7] = 0.0;
+    R_y[8] = cos_pitch;
+    R_x[0] = 1.0;
+    R_x[1] = 0.0;
+    R_x[2] = 0.0;
+    R_x[3] = 0.0;
+    R_x[4] = cos_roll;
+    R_x[5] = -sin_roll;
+    R_x[6] = 0.0;
+    R_x[7] = sin_roll;
+    R_x[8] = cos_roll;
+    // rotate
+    float R_zy[9];
+    float R_zyx[9];
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, R_z, 3, R_y, 3, 0.0, R_zy, 3);
+    cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, R_zy, 3, R_x, 3, 0.0, R_zyx, 3);
+    cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, R_zyx, 3, vector, 1, 1.0, out, 1);
+}
 void RotorWake::init(void) // rotor wake initialization
 {// by far config and rotor_state should be artificially configured
 
     // init vortex markers state
-    max_markers = int(360.0*config.rounds/config.psi)+1; // calculate max lagrangian markers of a vortex filament
+    max_markers = int(360.0*config.rounds/config.dpsi)+1; // calculate max lagrangian markers of a vortex filament
     wake_state.reserve(rotor_state.frame.n_blades*(max_markers+10)); // 10 is an arbitrary number, can be num>=1
     
     // release first pair of marker at the tip
     marker_release();
 
     // init dt
-    dt = config.psi/rotor_state.Omega; // time cost when rotor evolves interval angle
+    dt = config.dpsi/rotor_state.Omega; // time cost when rotor evolves interval angle
 }
 
 void RotorWake::update(void) 
@@ -89,7 +151,7 @@ void RotorWake::update(void)
             else
             {
                 BiotSavartInduction(wake_state.at(j).pos, wake_state.at(j+1).pos, 
-                        wake_state.at(i).pos, wake_state.at(i).Gamma, temp);
+                        wake_state.at(i).pos, wake_state.at(j).Gamma, temp);
                 for (int idx = 0; idx < 3; idx++)
                     ind[idx] += temp[idx];
             }
@@ -112,17 +174,32 @@ void RotorWake::marker_release(void) {
 
     // calculate the tip vortex circulation: Gamma
     new_marker.Gamma = 1; // tip vortex circulation
-    memset(new_marker.pos, 0, sizeof(new_marker.pos));
-    printf("size = %d", sizeof(new_marker.pos));
+
+    // calculate the position of this marker
+    float p_marker[3] = {rotor_state.frame.radius, 0, 0};
+    new_marker.pos[0] = rotor_state.x;
+    new_marker.pos[1] = rotor_state.y;
+    new_marker.pos[2] = rotor_state.z;
+    rotate_vector(p_marker, new_marker.pos, rotor_state.psi, rotor_state.pitch, rotor_state.roll);
+    // update blade azimuth
+    if (rotor_state.psi + config.dpsi >= 360.0)
+        rotor_state.psi += config.dpsi - 360.0;
+    else
+        rotor_state.psi += config.dpsi; 
+
+    // init other params
+    memset(new_marker.vel, 0, sizeof(new_marker.vel));
 
     wake_state.push_back(new_marker);
+
+    //printf("pos = {%f, %f, %f}\n", wake_state.back().pos[0], wake_state.back().pos[1], wake_state.back().pos[2]);
 }
 
 // Constructor
 RotorWake::RotorWake(void)
 {
     // init configurations
-    config.psi = 15; // degrees
+    config.dpsi = 15; // degrees
     config.rounds = 20; // 20 rounds
 
     // init rotor state
@@ -150,12 +227,9 @@ int main(int argc, char **argv) {
     RotorWake wake;
     wake.init();
 
-
-
-    /*while(1) {
+    while(1) {
         wake.update();
-        printf("N = %d\n", wake.wake_state.size());
-    }*/
+    }
 
     return 0;
 }

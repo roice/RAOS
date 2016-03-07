@@ -37,7 +37,7 @@ endif()
 #---- source files include path settings ----
 # add source directory into include path
 #   add root dir to search for header files of RAOS projects
-include_directories(${PROJECT_SOURCE_DIR})
+include_directories(${PROJECT_SOURCE_DIR}/../src/)
 #   add cblas dir to search for cblas.h header for linear algebra
 include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/include)
 
@@ -45,19 +45,21 @@ include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/include)
 # add library dir into lib path
 #   add blas and cblas lib dir
 link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/BLAS-3.6.0)
+link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/lib)
 
 #---- start compiling ----
 # compile main file
-add_executable(${PRJ_NAME} model/wake_rotor_cpu.cxx)
+add_executable(${PRJ_NAME} ../../src/model/wake_rotor_cpu.cxx)
 
 #---- start linking ----
 # Note: the former line depends on the next line
 # link external blas library
 target_link_libraries(${PRJ_NAME} cblas)
 target_link_libraries(${PRJ_NAME} blas)
+target_link_libraries(${PRJ_NAME} gfortran)
 
 # install
-#install(TARGETS ${PRJ_NAME}
-#    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../bin
-#    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/../lib
-#   )
+install(TARGETS ${PRJ_NAME}
+    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../bin
+    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/../lib
+   )

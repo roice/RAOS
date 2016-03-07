@@ -14,3 +14,4 @@ Dependencies:
 ----
 (1) OpenGL library<br>
 (2) boost
+(3) make, cmake, gcc, g++, gfortran

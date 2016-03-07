@@ -25,6 +25,7 @@ typedef struct {
   	float y;	/* position coordinate (earth axis y) */
   	float z;	/* position coordinate (earth axis z) */
     float Omega; // rotation angular speed
+    float psi; // blade azimuth, [0, 360)
 
     RotorFrame_t frame;
 }RotorState_t;
@@ -37,7 +38,7 @@ typedef struct {
 }VortexMarker_t;
 
 typedef struct {
-    float psi; // interval_angle (reference)
+    float dpsi; // delta_psi, interval_angle (reference)
     float rounds; // number of revolutions (number of vortex rings to maintain) 
 }RotorWakeConfig_t;
 
