@@ -21,6 +21,7 @@
 #include "ui/draw/DrawScene.h" // draw sim scene
 #include "SimConfig.h"
 #include "model/plume.h"
+#include "model/SimModel.h"
 
 // width and height of current window, for redraw function
 static int sim_width = 1;
@@ -144,6 +145,7 @@ static void draw_fps_note(void)
 static void SimView_idle(void) {
     // update models
     plume_update();
+    SimModel_qr_wake_update();
     // update view
     if (agvMoving) agvMove();
     SimView_redraw();

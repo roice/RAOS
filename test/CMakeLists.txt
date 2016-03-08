@@ -12,7 +12,7 @@ cmake_minimum_required(VERSION 2.6)
 # Project name
 set(PRJ_NAME wake)
 # Add DEBUG defination to print out debug info
-add_definitions(-DDEBUG)
+add_definitions(-DTEST)
 # ===================================================
 
 #====================================================
@@ -49,7 +49,7 @@ link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/lib)
 
 #---- start compiling ----
 # compile main file
-add_executable(${PRJ_NAME} ../../src/model/wake_rotor_cpu.cxx)
+add_executable(${PRJ_NAME} ../../src/model/wake_rotor_cpu.cxx ../../src/model/wake_qr_cpu.cxx)
 
 #---- start linking ----
 # Note: the former line depends on the next line

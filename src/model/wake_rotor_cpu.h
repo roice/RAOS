@@ -18,12 +18,7 @@ typedef struct
 } RotorFrame_t; // mechanical frame (constant)
 
 typedef struct {
-    float roll;	/* roll angle (Euler angle x) */
-  	float pitch;	/* pitch angle (Euler angle y) */
-  	float yaw;	/* yaw angle (Euler angle z) */
-    float x;	/* position coordinate (earth axis x) */
-  	float y;	/* position coordinate (earth axis y) */
-  	float z;	/* position coordinate (earth axis z) */
+    float pos[3];	/* position coordinate (earth axis x) */
     float Omega; // rotation angular speed
     float psi; // blade azimuth, [0, 360)
 
@@ -45,17 +40,23 @@ typedef struct {
 class RotorWake {
     public:
         RotorWake(void); // constructor
-        void init(void); // rotor wake init
-        void update(void); // rotor wake update
-
+        void init(const qrstate_t*); // rotor wake init
+        void maintain(const qrstate_t*); // marker release & remove, to maintain a fixed length of vortex filament
+    
         std::vector<VortexMarker_t> wake_state; // state of vortex markers
         RotorWakeConfig_t config; // configures of rotor wake simulation
         RotorState_t rotor_state;
-    private:
-        void marker_release(void);
 
+    private:
+        void marker_release(const qrstate_t*);
         float dt; // delta time (volatile, change according to psi and Omega)
         int max_markers; // maximum markers
 };
+
+/* rotate a vector to given euler angles */
+void rotate_vector(const float*, float*, float, float, float);
+
+/* get the induced velocity at a position, given several rotor wakes */
+void CalculateInducedVelocityOfMarker(float*, const int, const int, const int, RotorWake**, const int);
 
 #endif

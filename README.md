@@ -15,3 +15,5 @@ Dependencies:
 (1) OpenGL library<br>
 (2) boost
 (3) make, cmake, gcc, g++, gfortran
+(4) for rotor wake calculation:
+    cuda toolkit, and a graphic card

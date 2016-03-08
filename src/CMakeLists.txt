@@ -17,7 +17,7 @@ cmake_minimum_required(VERSION 2.6)
 # Project name
 set(PRJ_NAME RAOS)
 # Add DEBUG defination to print out debug info
-add_definitions(-DDEBUG)
+#add_definitions(-DDEBUG)
 # ===================================================
 
 #====================================================
@@ -30,7 +30,12 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa")
     set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -framework Cocoa")
+    # Modified by Roice, 20160308
+    # As CUDA is used to compute helicopter wakes, the MacOSX platform will
+    #  no longer to be supported since March 8, 2016. Currently the RAOS
+    #  project is written on Linux, but it may be compiled on Windows as well
     message("Compile on APPLE MACOSX")
+    error("The RAOS project only support Linux and Windows OS with graphic cards.")
 elseif(UNIX)
     message("Compile on UNIX")
 endif()
@@ -86,7 +91,8 @@ add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/DrawScene.cxx ui/draw/materials.cxx 
-    ui/draw/draw_qr.cxx ui/draw/draw_arena.cxx ui/draw/draw_plume.cxx)
+    ui/draw/draw_qr.cxx ui/draw/draw_arena.cxx ui/draw/draw_plume.cxx
+    ui/draw/draw_wake.cxx)
 # compile main file
 add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx SimConfig.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
@@ -109,7 +115,7 @@ target_link_libraries(${PRJ_NAME} blas)
 target_link_libraries(${PRJ_NAME} gfortran)
 
 # install
-install(TARGETS ${PRJ_NAME}
-    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../bin
-    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/../lib
-    )
+#install(TARGETS ${PRJ_NAME}
+#    RUNTIME DESTINATION ${PROJECT_SOURCE_DIR}/../bin
+#    LIBRARY DESTINATION ${PROJECT_SOURCE_DIR}/../lib
+#    )

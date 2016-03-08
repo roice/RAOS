@@ -18,6 +18,8 @@
 #include "model/qrmod.h"
 #include "SimConfig.h"
 
+#define PI 3.14159265358979323846
+
 void qr_init(qrstate_t* qrstate)
 {
     /* load configs about quadrotor */
@@ -43,12 +45,11 @@ void qr_init(qrstate_t* qrstate)
   	qrstate->mx = 0;
   	qrstate->my = 0;
 
-  	/* actuators 
-  	 */
-  	qrstate->a1 = 0;	/* rotor 1 */
-  	qrstate->a2 = 0;	/* rotor 2 */
-  	qrstate->a3 = 0;	/* rotor 3 */
-  	qrstate->a4 = 0;	/* rotor 4 */
+  	/* actuators, rotation speed Omega (rad/s) */
+  	qrstate->a1 = 50*2*PI;	/* rotor 1 */
+  	qrstate->a2 = 50*2*PI;	/* rotor 2 */
+  	qrstate->a3 = 50*2*PI;	/* rotor 3 */
+  	qrstate->a4 = 50*2*PI;	/* rotor 4 */
   	qrstate->leds = 1;	/* reset leds */
   	qrstate->tleds = 0;	/* reset led blink time */
 	

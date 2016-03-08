@@ -15,6 +15,7 @@
 #include "ui/draw/draw_qr.h" // quad visualization
 #include "ui/draw/draw_arena.h" // arena visualization
 #include "ui/draw/draw_plume.h" // plume visual
+#include "ui/draw/draw_wake.h" // wake visual
 #include "ui/draw/materials.h" // create material lists
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
@@ -56,6 +57,9 @@ void DrawScene(void)
 
     /* draw quadrotor */
     draw_qr(SimModel_get_qrstate());
+
+    /* draw rotor wakes */
+    draw_wake();
 
     /* draw plume */
     draw_plume();

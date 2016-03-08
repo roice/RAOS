@@ -12,9 +12,12 @@
 #define SIMMODEL_H
 
 #include "model/qrmod.h"
+#include "model/wake_qr_cpu.h"
 
 void SimModel_init(void);
 qrstate_t* SimModel_get_qrstate(void);
+QRWake* SimModel_get_qr_wake(void);
+void SimModel_qr_wake_update(void);
 
 #endif
 /* End of SimModel.h */
