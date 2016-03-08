@@ -35,7 +35,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     #  no longer to be supported since March 8, 2016. Currently the RAOS
     #  project is written on Linux, but it may be compiled on Windows as well
     message("Compile on APPLE MACOSX")
-    error("The RAOS project only support Linux and Windows OS with graphic cards.")
+    message(FATAL_ERROR "The RAOS project only support Linux and Windows OS with graphic cards.")
 elseif(UNIX)
     message("Compile on UNIX")
 endif()
