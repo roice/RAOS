@@ -12,7 +12,9 @@
  */
 #ifndef DRAW_WAKE_H
 #define DRAW_WAKE_H
+#include <vector>
+#include "model/robot.h"
 
-void draw_wake(void);
+void draw_wake(std::vector<Robot*>*);
 
 #endif

@@ -20,7 +20,6 @@
 #include "ui/agv.h" // eye movement
 #include "ui/draw/DrawScene.h" // draw sim scene
 #include "SimConfig.h"
-#include "model/plume.h"
 #include "model/SimModel.h"
 
 // width and height of current window, for redraw function
@@ -52,7 +51,7 @@ static void SimView_redraw(void)
     DrawScene(); // draw sim scene
     /* End drawing */
 
-    /* draw axes at the left-down corner */
+    /* draw axes on the ground */
     draw_axes();
 
     /* draw FPS note */
@@ -144,8 +143,8 @@ static void draw_fps_note(void)
 
 static void SimView_idle(void) {
     // update models
-    plume_update();
-    SimModel_qr_wake_update();
+    SimModel_update();
+
     // update view
     if (agvMoving) agvMove();
     SimView_redraw();

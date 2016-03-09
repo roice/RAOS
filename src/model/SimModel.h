@@ -11,13 +11,11 @@
 #ifndef SIMMODEL_H
 #define SIMMODEL_H
 
-#include "model/qrmod.h"
-#include "model/wake_qr_cpu.h"
+#include "model/robot.h"
 
 void SimModel_init(void);
-qrstate_t* SimModel_get_qrstate(void);
-QRWake* SimModel_get_qr_wake(void);
-void SimModel_qr_wake_update(void);
+void SimModel_update(void);
+std::vector<Robot*>* SimModel_get_robots(void);
 
 #endif
 /* End of SimModel.h */

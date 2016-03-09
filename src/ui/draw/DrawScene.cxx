@@ -12,7 +12,7 @@
 #include <FL/gl.h>
 
 #include "model/SimModel.h"
-#include "ui/draw/draw_qr.h" // quad visualization
+#include "ui/draw/draw_robots.h" // robots visualization
 #include "ui/draw/draw_arena.h" // arena visualization
 #include "ui/draw/draw_plume.h" // plume visual
 #include "ui/draw/draw_wake.h" // wake visual
@@ -56,13 +56,13 @@ void DrawScene(void)
     draw_arena(SIM_ARENA_BASIC);
 
     /* draw quadrotor */
-    draw_qr(SimModel_get_qrstate());
+    draw_robots(SimModel_get_robots());
 
     /* draw rotor wakes */
-    draw_wake();
+    draw_wake(SimModel_get_robots());
 
     /* draw plume */
-    draw_plume();
+    //draw_plume();
 }
 
 void DrawScene_init(void) // call before DrawScene

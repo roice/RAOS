@@ -5,7 +5,7 @@
 # Author: Roice(LUO Bing)
 # Date:   2014-11-24 Create this file (previous solplot3d)
 #         2016-02-01 Re-create this file
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 #====================================================
 # ================ User can Access ==================
@@ -16,8 +16,8 @@ cmake_minimum_required(VERSION 2.6)
 #set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 # Project name
 set(PRJ_NAME RAOS)
-# Add DEBUG defination to print out debug info
-#add_definitions(-DDEBUG)
+# Debug version
+set(CMAKE_BUILD_TYPE Debug)
 # ===================================================
 
 #====================================================
@@ -41,16 +41,8 @@ elseif(UNIX)
 endif()
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-#======== Build plot functions to a static library =======
+#============== Find Dependencies ================
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
-# build plot functions
-#add_subdirectory(plot)
-
-#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-#============== Build rest of the project ================
-#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-
 #---- External FLTK related settings ----
 # Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
 set(FLTK_DIR "${PROJECT_SOURCE_DIR}/../3rdparty/fltk-1.3.3/build")
@@ -66,6 +58,15 @@ find_package(FLTK REQUIRED NO_MODULE)
 find_package(OpenGL REQUIRED)
 # this file is in the same folder as FLTKConfig.cmake file
 include(${FLTK_USE_FILE})
+
+#---- External CUDA related settings ----
+find_package(CUDA REQUIRED)
+
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+#============== Build the project ================
+#$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+
+
 
 #---- source files include path settings ----
 # add source directory into include path
@@ -86,12 +87,16 @@ link_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/lib)
 set(LIB_UI_NAME ui)
 set(LIB_MODEL_NAME model) # models
 # make a library from quadrotor model files
-add_library(${LIB_MODEL_NAME} model/SimModel.cxx model/qrmod.cxx
-    model/plume.cxx model/wake_rotor_cpu.cxx model/wake_qr_cpu.cxx)
+cuda_add_library(${LIB_MODEL_NAME} 
+    model/SimModel.cxx
+    model/plume.cxx
+    model/wake_rotor.cxx model/wake.cxx
+    model/robot.cxx model/quadrotor.cxx)
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/DrawScene.cxx ui/draw/materials.cxx 
-    ui/draw/draw_qr.cxx ui/draw/draw_arena.cxx ui/draw/draw_plume.cxx
+    ui/draw/draw_robots.cxx ui/draw/draw_qr.cxx
+    ui/draw/draw_arena.cxx ui/draw/draw_plume.cxx
     ui/draw/draw_wake.cxx)
 # compile main file
 add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx SimConfig.cxx)

@@ -4,42 +4,41 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-02-23 create this file (RAOS)
  */
-#include "model/qrmod.h"
-#include "model/plume.h"
-#include "model/wake_qr_cpu.h"
-#include <stdio.h>
 
-/* global parameters for visualization */
-static qrstate_t qr_state;
-static QRWake wake;
+#include <vector>
+#include <string.h>
+#include "model/robot.h"
+#include "model/plume.h"
+#include "model/wake.h"
+
+/* Pointers of instances of RAOS models */
+static std::vector<Robot*> robots; // pointer array of robot instances
 
 void SimModel_init(void)
 {
-    qr_init(&qr_state);
-
-printf("wake.rotor_wake[0]->config.dpsi = %f\n", wake.rotor_wake[0]->config.dpsi);
-fflush(stdout);
-
-    wake.init(&qr_state);
-
-    plume_init();
+    /* create & init robot */
+    Robot* new_robot = new Robot("helicopter");
+    new_robot->state.pos[2] = 2.0;
+    new_robot->init();
+    robots.push_back(new_robot);
 }
 
-// get the pointer to the qr_state
-qrstate_t* SimModel_get_qrstate(void)
+void SimModel_update(void) {
+    /* update robot */
+    for (int i = 0; i < robots.size(); i++)
+        robots.at(i)->update();
+
+    /* update rotor wakes */
+    WakesUpdate(&robots);
+
+    /* update plume */
+    //plume_update();
+}
+
+// get the pointer to the robots
+std::vector<Robot*>* SimModel_get_robots(void)
 {
-    return &qr_state;
+    return &robots;
 }
 
-// get the pointer to instance RotorWake
-QRWake* SimModel_get_qr_wake(void) {
-    return &wake;
-}
-
-void SimModel_qr_wake_update(void) {
-    wake.update(&qr_state);
-
-    //printf("%f\n", wake.rotor_wake[0]->wake_state.at(0).pos[0]);
-    //fflush(stdout);
-}
 /* End of SimModel.cxx */

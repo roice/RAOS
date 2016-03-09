@@ -14,17 +14,10 @@
 #ifndef DRAW_QR_H
 #define DRAW_QR_H
 
-/* select visulization level */
-#define SIMPLE_VISUAL_QR // planar quad
-//#define NORMAL_VISUAL_QR // 3D quad
+#include "model/robot.h"
+#include "model/quadrotor.h"
 
-
-#if defined(SIMPLE_VISUAL_QR)
-#include "model/qrmod.h" // quad model, for qrstate_t
-void draw_qr(qrstate_t* qrstate);
-#elif defined(NORMAL_VISUAL_QR)
-void draw_qr_3d(qrstate_t* qrstate);
-#endif
+void draw_qr(RobotState_t*, QRframe_t*);
 
 #endif
 /* End of draw_qr.h */
