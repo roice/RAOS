@@ -46,10 +46,10 @@ class RotorWake {
         std::vector<VortexMarker_t> wake_state; // state of vortex markers
         RotorWakeConfig_t config; // configures of rotor wake simulation
         RotorState_t rotor_state;
+        int max_markers;
 
     private:
-        void marker_release(void);
-        int max_markers;
+        void marker_release(void); 
 };
 
 /* rotate a vector to given euler angles */

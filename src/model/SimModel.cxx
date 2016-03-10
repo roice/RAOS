@@ -21,6 +21,9 @@ void SimModel_init(void)
     new_robot->state.pos[2] = 2.0;
     new_robot->init();
     robots.push_back(new_robot);
+
+    /* init parallelization of rotor wakes computation */
+    WakesInit(&robots);
 }
 
 void SimModel_update(void) {
@@ -33,6 +36,12 @@ void SimModel_update(void) {
 
     /* update plume */
     //plume_update();
+}
+
+void SimModel_finish(void)
+{
+    // free memory of GPU computation
+    WakesFinish();
 }
 
 // get the pointer to the robots

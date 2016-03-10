@@ -15,6 +15,7 @@
 
 void SimModel_init(void);
 void SimModel_update(void);
+void SimModel_finish(void);
 std::vector<Robot*>* SimModel_get_robots(void);
 
 #endif

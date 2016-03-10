@@ -61,6 +61,8 @@ include(${FLTK_USE_FILE})
 
 #---- External CUDA related settings ----
 find_package(CUDA REQUIRED)
+# nvcc flags
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_35,code=sm_35)
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #============== Build the project ================
@@ -90,7 +92,7 @@ set(LIB_MODEL_NAME model) # models
 cuda_add_library(${LIB_MODEL_NAME} 
     model/SimModel.cxx
     model/plume.cxx
-    model/wake_rotor.cxx model/wake.cxx
+    model/wake_rotor.cxx model/wake.cu
     model/robot.cxx model/quadrotor.cxx)
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx

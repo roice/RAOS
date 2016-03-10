@@ -42,6 +42,9 @@ int main(int argc, char **argv)
 
     // save configs before closing
     SimConfig_save();
+
+    // delete events, free memory...
+    SimModel_finish();
     return 0;
 }
 

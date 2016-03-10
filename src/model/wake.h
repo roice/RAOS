@@ -8,7 +8,9 @@
 #ifndef WAKE_H
 #define WAKE_H
 
+void WakesInit(std::vector<Robot*>*);
 void WakesUpdate(std::vector<Robot*>*); // update all of the wakes in the environment
+void WakesFinish(void);
 
 #endif
 
