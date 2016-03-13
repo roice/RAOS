@@ -17,12 +17,9 @@
 
 
 /* draw a vortex filament */
-static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers,
-        const int n_blades, const int idx_blade) {
-    int n_m = markers->size()/n_blades;
-
-    //printf("%f\n", markers->at(0*n_blades+idx_blade).pos[0]);
-    //    fflush(stdout);
+static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers)
+{
+    int n_m = markers->size();
 
     // draw
     glDisable(GL_LIGHTING);
@@ -31,16 +28,12 @@ static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers,
     glBegin(GL_LINES);
     for (int i = 0; i < n_m-1; i++)
     {// draw each segment as line segment    
-  	    
-  	    glVertex3f(markers->at(i*n_blades+idx_blade).pos[0],
-                markers->at(i*n_blades+idx_blade).pos[2], 
-                markers->at(i*n_blades+idx_blade).pos[1]);
-        glVertex3f(markers->at((i+1)*n_blades+idx_blade).pos[0],
-                markers->at((i+1)*n_blades+idx_blade).pos[2], 
-                markers->at((i+1)*n_blades+idx_blade).pos[1]);
-
-        //printf("%f\n", markers->at(i*n_blades+idx_blade).pos[0]);
-        //fflush(stdout);
+  	    glVertex3f(markers->at(i).pos[0],
+                markers->at(i).pos[2], 
+                markers->at(i).pos[1]);
+        glVertex3f(markers->at(i+1).pos[0],
+                markers->at(i+1).pos[2], 
+                markers->at(i+1).pos[1]);
     }
     glEnd();
     
@@ -51,6 +44,5 @@ static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers,
 void draw_wake(std::vector<Robot*>* robots)
 {
     /* draw FVM vortex filaments */
-    draw_vortex_filament(&(robots->at(0)->wakes.at(0)->wake_state),
-        robots->at(0)->wakes.at(0)->rotor_state.frame.n_blades, 0);
+    draw_vortex_filament(robots->at(0)->wakes.at(0)->wake_state[0]);
 }

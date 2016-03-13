@@ -21,9 +21,11 @@ void RotorWake::init(void) // rotor wake initialization
 
     // init vortex markers state
     max_markers = int(360.0*config.rounds/10.0)+1; // calculate max lagrangian markers of a vortex filament, 10.0 degree is an arbitrary number
-    wake_state.reserve(rotor_state.frame.n_blades*(max_markers+10)); // 10 is an arbitrary number, can be num>=1
+    wake_state = (std::vector<VortexMarker_t>*)malloc(rotor_state.frame.n_blades*sizeof(std::vector<VortexMarker_t>*));
+    for (int i = 0; i < rotor_state.frame.n_blades; i++)
+        wake_state[i]->reserve(max_markers+10); // 10 is an arbitrary number, can be num>=1
     
-    // release first pair of marker at the tips
+    // release first group of markers (one for each blade) at the tips
     marker_release();
 }
 
@@ -34,9 +36,9 @@ void RotorWake::maintain(void)
     marker_release();
     
     // remove old markers
-    if (wake_state.size() > max_markers) {
+    if (wake_state[0]->size() > max_markers) {
         for (int i = 0; i < rotor_state.frame.n_blades; i++)
-            wake_state.erase(wake_state.begin());
+            wake_state[i]->erase(wake_state[i]->begin());
     }
 }
 
@@ -56,7 +58,7 @@ void RotorWake::marker_release(void) {
         memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
         rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
         // push to wake state array
-        wake_state.push_back(new_marker);
+        wake_state[i]->push_back(new_marker);
     }
 
     // update blade azimuth
