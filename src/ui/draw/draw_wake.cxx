@@ -30,10 +30,10 @@ static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers)
     {// draw each segment as line segment    
   	    glVertex3f(markers->at(i).pos[0],
                 markers->at(i).pos[2], 
-                markers->at(i).pos[1]);
+                -markers->at(i).pos[1]);
         glVertex3f(markers->at(i+1).pos[0],
                 markers->at(i+1).pos[2], 
-                markers->at(i+1).pos[1]);
+                -markers->at(i+1).pos[1]);
     }
     glEnd();
     
