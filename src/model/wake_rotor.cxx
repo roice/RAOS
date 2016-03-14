@@ -21,10 +21,11 @@ void RotorWake::init(void) // rotor wake initialization
 
     // init vortex markers state
     max_markers = int(360.0*config.rounds/10.0)+1; // calculate max lagrangian markers of a vortex filament, 10.0 degree is an arbitrary number
-    wake_state = (std::vector<VortexMarker_t>*)malloc(rotor_state.frame.n_blades*sizeof(std::vector<VortexMarker_t>*));
-    for (int i = 0; i < rotor_state.frame.n_blades; i++)
+    wake_state = (std::vector<VortexMarker_t>**)malloc(rotor_state.frame.n_blades*sizeof(std::vector<VortexMarker_t>*));
+    for (int i = 0; i < rotor_state.frame.n_blades; i++) {
+        wake_state[i] = new std::vector<VortexMarker_t>;
         wake_state[i]->reserve(max_markers+10); // 10 is an arbitrary number, can be num>=1
-    
+    }
     // release first group of markers (one for each blade) at the tips
     marker_release();
 }
