@@ -39,35 +39,55 @@ __device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, floa
 
     // get vectors AP, BP and AB & BA  [12 FLOPS]
     //  AP [3 FLOPS]
+    /*
     ap.x = p.x - a.pos[0];
     ap.y = p.y - a.pos[1];
     ap.z = p.z - a.pos[2];
+    */
+    ap.x = __fsub_ru(p.x, a.pos[0]);
+    ap.y = __fsub_ru(p.y, a.pos[1]);
+    ap.z = __fsub_ru(p.z, a.pos[2]);
     //  BP [3 FLOPS]
+    /*
     bp.x = p.x - b.pos[0];
     bp.y = p.y - b.pos[1];
     bp.z = p.z - b.pos[2];
+    */
+    bp.x = __fsub_ru(p.x, b.pos[0]);
+    bp.y = __fsub_ru(p.y, b.pos[1]);
+    bp.z = __fsub_ru(p.z, b.pos[2]);
     //  AB [3 FLOPS]
+    /*
     ab.x = b.pos[0] - a.pos[0];
     ab.y = b.pos[1] - a.pos[1];
     ab.z = b.pos[2] - a.pos[2];
+    */
+    ab.x = __fsub_ru(b.pos[0], a.pos[0]);
+    ab.y = __fsub_ru(b.pos[1], a.pos[1]);
+    ab.z = __fsub_ru(b.pos[2], a.pos[2]);
     //  BA [3 FLOPS]
+    /*
     ba.x = a.pos[0] - b.pos[0];
     ba.y = a.pos[1] - b.pos[1];
     ba.z = a.pos[2] - b.pos[2];
+    */
+    ba.x = __fsub_ru(a.pos[0], b.pos[0]);
+    ba.y = __fsub_ru(a.pos[1], b.pos[1]);
+    ba.z = __fsub_ru(a.pos[2], b.pos[2]);
 
     // cos(ap-ab) and cos(ba-bp) [31 FLOPS]
     dbnrm_ab = ab.x*ab.x + ab.y*ab.y + ab.z*ab.z; // [5 FLOPS]
     dbnrm_ap = ap.x*ap.x + ap.y*ap.y + ap.z*ap.z; // [5 FLOPS]
     dbnrm_bp = bp.x*bp.x + bp.y*bp.y + bp.z*bp.z; // [5 FLOPS] 
-    cos_apab = (ap.x*ab.x + ap.y*ab.y + ap.z*ab.z)*rsqrtf(dbnrm_ap*dbnrm_ab); // [8 FLOPS]
-    cos_babp = (ba.x*bp.x + ba.y*bp.y + ba.z*bp.z)*rsqrtf(dbnrm_ab*dbnrm_bp); // [8 FLOPS]
+    cos_apab = (ap.x*ab.x + ap.y*ab.y + ap.z*ab.z)*__frsqrt_rn(dbnrm_ap*dbnrm_ab); // [8 FLOPS]
+    cos_babp = (ba.x*bp.x + ba.y*bp.y + ba.z*bp.z)*__frsqrt_rn(dbnrm_ab*dbnrm_bp); // [8 FLOPS]
 
     // h, perpendicular distance from P to AB [5 FLOPS]
     db_sin_apab = 1-cos_apab*cos_apab; //[2 FLOPS]
     if (db_sin_apab <= 0.0f) // sometimes |cos_apab| will be slightly larger than 1.0f due to computation err
         h = 0.0f;
     else
-        h = sqrtf(dbnrm_ap) * sqrtf(db_sin_apab); // [3 FLOPS]
+        h = __fsqrt_ru(dbnrm_ap) * __fsqrt_ru(db_sin_apab); // [3 FLOPS]
 if (h != h)
     printf("fuck");
 
@@ -81,7 +101,7 @@ if (scale != scale)
     ind.x = ap.y*bp.z - ap.z*bp.y;
     ind.y = ap.z*bp.x - ap.x*bp.z;
     ind.z = ap.x*bp.y - ap.y*bp.x;
-    rnrm_ind = rsqrtf(ind.x*ind.x + ind.y*ind.y + ind.z*ind.z);
+    rnrm_ind = __frsqrt_rn(ind.x*ind.x + ind.y*ind.y + ind.z*ind.z);
     scale = scale * rnrm_ind;
     ind.x = scale * ind.x;
     ind.y = scale * ind.y;
