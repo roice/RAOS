@@ -22,7 +22,7 @@ int* idx_end_marker_fila; // on-host array containing index of endpoint of all v
 int* dev_idx_end_marker_fila; // on-device array ...
 
 // vel += biot savert induction from segement a-b to position p
-__device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, float3 p, float3 vel, int num_markers)
+__device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, float3 p, float3 vel)
 {
     float3 ap, bp, ab, ba, ind;
     float dbnrm_ab, dbnrm_ap, dbnrm_bp; // |vector|^2
@@ -99,36 +99,34 @@ if (vel.x != vel.x)
 }
 
 __device__ float3 tile_calculation_vel_markers
-(float3 pos, float3 vel, int tile, int* index_end, int num_fila, int num_markers)
+(float3 pos, float3 vel, int tile, int tile_size,int row_sgmts, VortexMarker_t* markers, int* index_end, int num_fila, int num_markers)
 {
     int i; // the i-th colum marker in this tile
     int idx_m; // the idx_m -th colum marker of whole N markers
     int idx_fila; // index of fila
+    int shared_mem_offset = (tile%row_sgmts)*tile_size;
 
     bool isend; // the marker to be calculated is an end point or not
 
     extern __shared__ VortexMarker_t tile_markers[];
  
-//printf("tile_markers[0].pos[0] = %f, tile_markers[1].pos[0] = %f\n", tile_markers[0].pos[0], tile_markers[1].pos[0]);
-
-
     // if this tile is not the first tile, we will use the last tile's end
     if (tile > 0)
     {
         isend = false;
         for (idx_fila = 0; idx_fila < num_fila; idx_fila++) {
-            if (tile*blockDim.x-1 == index_end[idx_fila]) {
+            if (tile*tile_size-1 == index_end[idx_fila]) {
                 isend = true;
                 break;
             }
         }
-        if (isend == false)
-            vel = biot_savart_induction(tile_markers[blockDim.x], tile_markers[0], pos, vel, num_markers); 
+        if (isend == false && tile*tile_size < num_markers)
+            vel = biot_savart_induction(markers[tile*tile_size-1], tile_markers[shared_mem_offset], pos, vel); 
     }
 
-    for (i = 0; i < blockDim.x -1; i++)
+    for (i = 0; i < tile_size-1; i++)
     {// compule all colum markers in this tile
-        idx_m = tile * blockDim.x + i;
+        idx_m = tile * tile_size + i;
         if (idx_m >= num_markers-1)
             break;
         else
@@ -142,59 +140,82 @@ __device__ float3 tile_calculation_vel_markers
                 }
             }
             if (isend == false) // if this marker is not an end point
-                vel = biot_savart_induction(tile_markers[i], tile_markers[i+1], pos, vel, num_markers); 
+                vel = biot_savart_induction(tile_markers[shared_mem_offset+i], tile_markers[shared_mem_offset+i+1], pos, vel);
         }
-    }
-
-    if ((tile+1)*blockDim.x-1 < num_markers)
-    {// save the last marker of this tile for the computation of next tile
-        tile_markers[blockDim.x] = tile_markers[blockDim.x-1];
     }
 
     return vel;
 }
 
 /* calculate velocities of markers, running on GPU
+Note:
+    This routine uses one-dimensional blocks and threads
+    row_sgms is the number of segments to parallelly compute a row
+    blockDim must equal to tile_size*row_sgmts
+    gridDim == (num_markers + tile_size - 1) / tile_size
  */
-__global__ void CalculateVelofMarkers(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers)
+__global__ void CalculateVelofMarkers(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers, int tile_size, int row_sgmts)
 {
     extern __shared__ VortexMarker_t tile_markers[];
 
-    int tile, idx;
+    int idx, i;
     float3 pos; // position of vortex marker to calculate velocity in this thread
     float3 vel = {0.0f, 0.0f, 0.0f}; // velocity of this marker
-    int tid = threadIdx.x + blockIdx.x * blockDim.x; // get ID of this thread
+    int row = threadIdx.x%tile_size + blockIdx.x*tile_size; // get row number (the index of marker to be evaluated)
 
     // get the marker of which the velocity to be calculated
-    if (tid < num_markers) {
-        pos.x = markers[tid].pos[0]; // in C++, struct can be directly assigned
-        pos.y = markers[tid].pos[1];
-        pos.z = markers[tid].pos[2];
+    if (row < num_markers) {
+        pos.x = markers[row].pos[0];
+        pos.y = markers[row].pos[1];
+        pos.z = markers[row].pos[2];
     }
 
-    for (tile = 0; tile < gridDim.x; tile++) // every thread can enter this loop
+    // compute each tile
+    i = 0;
+    while(true) // every thread can enter this loop
     {
-        idx = tile * blockDim.x + threadIdx.x;
+        idx = threadIdx.x + blockDim.x*i;
         if (idx < num_markers)
             tile_markers[threadIdx.x] = markers[idx]; // copy markers to shared mem for tile calculation 
         __syncthreads(); // make sure the shared mem has been loaded
-        if (tid < num_markers)
-            vel = tile_calculation_vel_markers(pos, vel, tile, idx_end, num_fila, num_markers);
+        if (row < num_markers)
+            vel = tile_calculation_vel_markers(pos, vel, idx/tile_size, tile_size, row_sgmts, markers, idx_end, num_fila, num_markers);
         __syncthreads(); // make sure every thread has done the calc of this tile
+        
+        if (blockDim.x*(i+1) < num_markers)
+            i++;
+        else
+            break;
     }
 
-    // Save the result in global memory for the integration step.
-    if (tid < num_markers) {
-        markers[tid].vel[0] = vel.x;
-        markers[tid].vel[1] = vel.y;
-        markers[tid].vel[2] = vel.z;
+    // save the result of this segment to the end of the shared mem
+    //  at present the shared memory is of no use for computation, so it can be used to temporarily store the segment results
+    if (row < num_markers) {
+        tile_markers[threadIdx.x].vel[0] = vel.x;
+        tile_markers[threadIdx.x].vel[1] = vel.y;
+        tile_markers[threadIdx.x].vel[2] = vel.z;
+    }
+    __syncthreads(); // make sure the segment results are stored
+ 
+    if (threadIdx.x < tile_size && row < num_markers) {
+        // sum the velocities computed by multiple (num of row_sgms) threads
+        vel.x = 0.0f; vel.y = 0.0f; vel.z = 0.0f;
+        for (i = 0; i < row_sgmts; i++) {
+            vel.x += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[0];
+            vel.y += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[1];
+            vel.z += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[2];
+        }
+        // Save the result in global memory for the integration step.
+        markers[row].vel[0] = vel.x;
+        markers[row].vel[1] = vel.y;
+        markers[row].vel[2] = vel.z;
 
-        markers[tid].pos[0] += vel.x*0.01;
-        markers[tid].pos[1] += vel.y*0.01;
-        markers[tid].pos[2] += vel.z*0.01;
+        markers[row].pos[0] += vel.x*0.01;
+        markers[row].pos[1] += vel.y*0.01;
+        markers[row].pos[2] += vel.z*0.01;
     }
 }
-
+#if 0
 /* calculate new positions of markers, running on GPU */
 __global__ void CalculatePosofMarkers(VortexMarker_t* markers, int num_markers)
 {
@@ -212,7 +233,7 @@ __global__ void CalculatePosofMarkers(VortexMarker_t* markers, int num_markers)
     if (tid < num_markers)
         markers[tid] = mkr;
 }
-
+#endif
 
 /* update all of the rotor wakes in the environment
  * this routine will traverse all of the robot instances
@@ -248,20 +269,18 @@ void WakesUpdate(std::vector<Robot*>* robots)
     
     // Phase 3: parallel computing
     //  determine threads per block and blocks number, at present addr_cp_markers contains total num of markers
-    int threads, blocks;
-    if (addr_cp_markers < 4*prop.warpSize * prop.multiProcessorCount) // N too small, need to cover as many processors as possible
-        threads = std::min(2*prop.warpSize, prop.maxThreadsPerBlock);
-    else
-        threads = std::min(4*prop.warpSize, prop.maxThreadsPerBlock);
-    blocks = (addr_cp_markers + threads - 1) / threads; // make sure there are enough blocks&threads
+    int p, q, threads, blocks;
+    p = prop.warpSize; // tile size
+    q = 2; // number of segments of a row
+    threads = std::min(p*q, prop.maxThreadsPerBlock);
+    blocks = (addr_cp_markers + p - 1) / p;
     //  Note: here omitted checks for max number of blocks, since in RAO problem the vortex markers
     //        rarely exceeds 65535*threads.
 
     //  launch gpu computing
     //   the end address of shared memory contains the end element of 'last' tile for 'next' tile computation
     cudaError_t err;
-
-    CalculateVelofMarkers<<<blocks, threads, (threads+1)*sizeof(VortexMarker_t)>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers);
+    CalculateVelofMarkers<<<blocks, threads, (threads)*sizeof(VortexMarker_t)>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers, p, q);
     err = cudaGetLastError();
     if (err != cudaSuccess) 
         printf("Error: %s\n", cudaGetErrorString(err));
