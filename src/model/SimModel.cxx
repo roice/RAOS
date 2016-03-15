@@ -11,6 +11,8 @@
 #include "model/plume.h"
 #include "model/wake.h"
 
+#include <stdio.h>
+
 /* Pointers of instances of RAOS models */
 static std::vector<Robot*> robots; // pointer array of robot instances
 
@@ -33,6 +35,8 @@ void SimModel_update(void) {
 
     /* update rotor wakes */
     WakesUpdate(&robots);
+
+//printf("vel[2] = %f, len_markers = %d     ",robots.at(0)->wakes.at(0)->wake_state[0]->at(0).vel[2], robots.at(0)->wakes.at(0)->wake_state[0]->size());
 
     /* update plume */
     //plume_update();
