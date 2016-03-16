@@ -62,7 +62,7 @@ include(${FLTK_USE_FILE})
 #---- External CUDA related settings ----
 find_package(CUDA REQUIRED)
 # nvcc flags
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #============== Build the project ================

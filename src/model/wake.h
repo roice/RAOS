@@ -9,7 +9,7 @@
 #define WAKE_H
 
 void WakesInit(std::vector<Robot*>*);
-void WakesUpdate(std::vector<Robot*>*); // update all of the wakes in the environment
+void WakesUpdate(std::vector<Robot*>*, const char*); // update all of the wakes in the environment
 void WakesFinish(void);
 
 #endif

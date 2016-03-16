@@ -34,7 +34,7 @@ void SimModel_update(void) {
         robots.at(i)->update();
 
     /* update rotor wakes */
-    WakesUpdate(&robots);
+    WakesUpdate(&robots, "PC");
 
 //printf("vel[2] = %f, len_markers = %d     ",robots.at(0)->wakes.at(0)->wake_state[0]->at(0).vel[2], robots.at(0)->wakes.at(0)->wake_state[0]->size());
 

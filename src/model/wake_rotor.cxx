@@ -80,7 +80,7 @@ RotorWake::RotorWake(void)
     rotor_state.frame.n_blades = 2; // two-blade
     memset(rotor_state.pos, 0, sizeof(rotor_state.pos));
     memset(rotor_state.attitude, 0, sizeof(rotor_state.attitude));
-    rotor_state.Omega = 50*2*PI; // rad/s
+    rotor_state.Omega = 25*2*PI; // rad/s
     rotor_state.psi = 0;
     
     max_markers = 1000;
