@@ -62,7 +62,7 @@ void DrawScene(void)
     draw_wake(SimModel_get_robots());
 
     /* draw plume */
-    //draw_plume();
+    draw_plume();
 }
 
 void DrawScene_init(void) // call before DrawScene

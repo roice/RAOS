@@ -15,10 +15,10 @@ void plume_init(void);
 void plume_update(void);
 
 #if defined(USE_FILAMENT_MODEL)
+#define MAX_NUM_PUFFS 1000
 typedef struct {
-    float x;
-    float y;
-    float z;
+    float pos[3];
+    float vel[3];
     float r;
 }FilaState_t; // struct type of the state of a single filament
 

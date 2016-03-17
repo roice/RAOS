@@ -14,7 +14,7 @@
 /*============== Filament Model ============*/
 #if defined(USE_FILAMENT_MODEL)
 
-#define MAX_NUM_FILA 100
+
 
 #if defined(WIN32) || defined(__EMX__)
 #  define drand48() (((float) rand())/((float) RAND_MAX))
@@ -39,7 +39,7 @@ class FilaModel
             source_pos[1] = config->source.y;
             source_pos[2] = config->source.z;
             /* init fila state */
-            state.reserve(MAX_NUM_FILA); // make room for MAX_NUM_FILA fila
+            state.reserve(MAX_NUM_PUFFS+10); // make room for MAX_NUM_PUFFS fila
             /* release first odor pack at source */
             fila_release();
             /* clear number of fila need to release */
@@ -63,9 +63,9 @@ class FilaModel
                 vm_y = drand48() - 0.5;
                 vm_z = drand48() - 0.5;
                 // calculate pos increment
-                state.at(i).x += (wind_x+vm_x) * dt;
-                state.at(i).y += (wind_y+vm_y) * dt;
-                state.at(i).z += (wind_z+vm_z) * dt;
+                state.at(i).pos[0] += (wind_x+vm_x + state.at(i).vel[0]) * dt;
+                state.at(i).pos[1] += (wind_y+vm_y + state.at(i).vel[1]) * dt;
+                state.at(i).pos[2] += (wind_z+vm_z + state.at(i).vel[2]) * dt;
             }
         /* Step 2: update sizes of fila */
             for (int i = 0; i < state.size(); i++) // for each fila
@@ -74,7 +74,7 @@ class FilaModel
             }
         /* Step 3: fila maintainance */
             fila_release();
-            if (state.size() > MAX_NUM_FILA)
+            if (state.size() > MAX_NUM_PUFFS)
                 state.erase(state.begin());                
         }
     private: 
@@ -84,9 +84,9 @@ class FilaModel
         void fila_release(void) // release a filament (puff)
         {
             FilaState_t new_fila;
-            new_fila.x = source_pos[0];
-            new_fila.y = source_pos[1];
-            new_fila.z = source_pos[2];
+            new_fila.pos[0] = source_pos[0];
+            new_fila.pos[1] = source_pos[1];
+            new_fila.pos[2] = source_pos[2];
             new_fila.r = 0.05;
             state.push_back(new_fila);
         }

@@ -9,6 +9,7 @@
 #include "model/robot.h"
 #include "model/wake_rotor.h"
 #include "model/error_cuda.h"
+#include "model/plume.h" // for wake-induced velocity computation of plume puffs
 
 #define PI 3.14159265358979323846
 
@@ -487,6 +488,111 @@ void WakesFinish(void)
     // free host memory
     HANDLE_ERROR( cudaFreeHost(idx_end_marker_fila) );
     HANDLE_ERROR( cudaFreeHost(wake_markers) );
+}
+
+/*************** Calculate Induced Velocity at Plume puffs ***************/
+// these functions can be called after WakesInit
+
+__global__ void CalculateIndVelatPlumePuffs(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers, FilaState_t* plume, int num_puffs)
+{
+    float3 pos; // position of plume puff to calculate velocity in this thread
+    float3 vel = {0.0f, 0.0f, 0.0f}; // velocity of this marker
+    int tid = threadIdx.x + blockIdx.x * blockDim.x; // ID of this thread
+    int idx_fila, i;
+    bool isend; // the marker to be calculated is an end point or not
+
+    // get the plume fila (puff) which the velocity to be calculated
+    if (tid < num_puffs) 
+    {
+        pos.x = plume[tid].pos[0];
+        pos.y = plume[tid].pos[1];
+        pos.z = plume[tid].pos[2];
+
+        for (i = 0; i < num_markers-1; i++) // every thread can enter this function
+        {// traverse every vortex segments
+            isend = false;
+            for (idx_fila = 0; idx_fila < num_fila; idx_fila++) {
+                if (i == idx_end[idx_fila]) {
+                    isend = true;
+                    break;
+                }
+            }
+            if (isend == false)
+                vel = biot_savart_induction(markers[i], markers[i+1], pos, vel);
+        }
+    }
+
+    // save velocity
+    if (tid < num_puffs) {
+        plume[tid].vel[0] = vel.x;
+        plume[tid].vel[1] = vel.y;
+        plume[tid].vel[2] = vel.z;
+    }
+}
+
+FilaState_t* plume_puffs; // on-host ...
+FilaState_t* dev_plume_puffs; // on-device array containing the states of plume puffs
+
+void WakesIndVelatPlumePuffsUpdate(std::vector<Robot*>* robots, std::vector<FilaState_t>* plume)
+{
+    int idx_robot, idx_rotor, idx_blade;
+    int addr_cp_markers = 0, num_blade = 0;
+    // Step 1: collect all vortex markers & puffs to one memory, respectively, for GPU computing
+    //  the markers are placed contiguously, fila to fila
+    for(idx_robot = 0; idx_robot < robots->size(); idx_robot++) {
+        for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
+            for (idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++) {
+                std::copy(robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->begin(),
+                    robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->end(),
+                    &wake_markers[addr_cp_markers]);
+                addr_cp_markers += robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->size();
+                idx_end_marker_fila[num_blade] = addr_cp_markers-1; // the address of the last element, hence -1
+                num_blade++;
+            }
+        }
+    }// traversed all rotor wakes and got total number of markers
+    //  collect puffs to a memory
+    std::copy(plume->begin(), plume->end(), &plume_puffs[0]);
+
+    // Step 2: copy array wake_markers, idx_wake_markers, plume_puffs to GPU's version
+    HANDLE_ERROR( cudaMemcpy(dev_wake_markers, wake_markers, 
+                addr_cp_markers*sizeof(VortexMarker_t), cudaMemcpyHostToDevice) );
+    HANDLE_ERROR( cudaMemcpy(dev_idx_end_marker_fila, idx_end_marker_fila, 
+                num_blade*sizeof(int), cudaMemcpyHostToDevice) );
+    HANDLE_ERROR( cudaMemcpy(dev_plume_puffs, plume_puffs,
+                plume->size()*sizeof(FilaState_t), cudaMemcpyHostToDevice) );
+
+    // Step 3: compute induced velocity of plume puffs
+    //  determine threads per block and blocks number, at present addr_cp_markers contains total num of markers
+    int p, q, threads, blocks;
+    p = prop.warpSize; // tile size
+    q = 4; // number of segments of a row
+    threads = std::min(p*q, prop.maxThreadsPerBlock);  
+    //  launch gpu computing
+    cudaError_t err; 
+    //  <1> calculate velocity of Lagrangian markers, n-1 state
+    blocks = (addr_cp_markers + threads -1) / threads;
+    //  Note: here omitted checks for max number of blocks, since in RAO problem the vortex markers
+    //        rarely exceeds 65535*threads.
+    CalculateIndVelatPlumePuffs<<<blocks, threads>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers, dev_plume_puffs, plume->size());
+    err = cudaGetLastError();
+    if (err != cudaSuccess)
+        printf("Error: %s\n", cudaGetErrorString(err));
+
+    // Step 4: distribute puffs to host and give back
+    HANDLE_ERROR( cudaMemcpy(plume_puffs, dev_plume_puffs,
+                plume->size()*sizeof(FilaState_t), cudaMemcpyDeviceToHost) );
+    std::copy(&plume_puffs[0], &plume_puffs[plume->size()], plume->data());
+}
+
+void WakesIndVelatPlumePuffsInit(std::vector<Robot*>* robots, std::vector<FilaState_t>* plume)
+{
+    // allocate a page-locked host memory containing all of the plume puffs states
+    HANDLE_ERROR( cudaHostAlloc((void**)&plume_puffs, 
+        MAX_NUM_PUFFS*sizeof(*plume_puffs), cudaHostAllocDefault) );
+    // allocate device memory as big as the host's
+    HANDLE_ERROR( cudaMalloc((void**)&dev_plume_puffs, 
+        MAX_NUM_PUFFS*sizeof(*dev_plume_puffs)) );
 }
 
 /* End of file wake.cu */

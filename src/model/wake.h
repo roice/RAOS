@@ -12,6 +12,10 @@ void WakesInit(std::vector<Robot*>*);
 void WakesUpdate(std::vector<Robot*>*, const char*); // update all of the wakes in the environment
 void WakesFinish(void);
 
+// for plume puffs
+void WakesIndVelatPlumePuffsInit(std::vector<Robot*>*, std::vector<FilaState_t>*);
+void WakesIndVelatPlumePuffsUpdate(std::vector<Robot*>*, std::vector<FilaState_t>*);
+
 #endif
 
 /* End of file wake.h */

@@ -24,8 +24,13 @@ void SimModel_init(void)
     new_robot->init();
     robots.push_back(new_robot);
 
+    /* init plume */
+    plume_init();
+
     /* init parallelization of rotor wakes computation */
     WakesInit(&robots);
+    /* init para... of wakes-induced velocity at puffs */
+    WakesIndVelatPlumePuffsInit(&robots, plume_get_fila_state());
 }
 
 void SimModel_update(void) {
@@ -36,10 +41,9 @@ void SimModel_update(void) {
     /* update rotor wakes */
     WakesUpdate(&robots, "PC");
 
-//printf("vel[2] = %f, len_markers = %d     ",robots.at(0)->wakes.at(0)->wake_state[0]->at(0).vel[2], robots.at(0)->wakes.at(0)->wake_state[0]->size());
-
     /* update plume */
-    //plume_update();
+    WakesIndVelatPlumePuffsUpdate(&robots, plume_get_fila_state());
+    plume_update();
 }
 
 void SimModel_finish(void)

@@ -25,7 +25,7 @@ void draw_plume(void)
     for (int i = 0; i < fs->size(); i++) // for each filament
     {
         glPushMatrix(); 
-        glTranslatef(fs->at(i).x, fs->at(i).z, -fs->at(i).y);
+        glTranslatef(fs->at(i).pos[0], fs->at(i).pos[2], -fs->at(i).pos[1]);
         glPushAttrib(GL_LIGHTING_BIT);
         SimMaterial_smoke(1.0-fs->at(i).r);
         glutSolidSphere(fs->at(i).r, 8, 3);
