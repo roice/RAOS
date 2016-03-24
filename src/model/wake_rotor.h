@@ -15,6 +15,7 @@
 typedef struct
 {
     float radius; // propeller radius
+    float chord;
     int n_blades; // number of blades
 } RotorFrame_t; // mechanical frame (constant)
 
@@ -23,6 +24,7 @@ typedef struct {
     float attitude[3]; // [yaw, pitch, roll]
     float Omega; // rotation angular speed, volatile
     float psi; // blade azimuth, [0, 360), volatile
+    float thrust; // the thrust this rotor produce, N
     RotorFrame_t frame; // const
 }RotorState_t;
 
@@ -34,8 +36,8 @@ typedef struct {
 }VortexMarker_t;
 
 typedef struct {
-    float dt; // delta time to release/maintain marker
     float rounds; // number of revolutions (number of vortex rings to maintain) 
+    float dpsi; // delta azimuth angle to release/maintain marker
 }RotorWakeConfig_t; // const since sim init
 
 class RotorWake {
@@ -47,9 +49,11 @@ class RotorWake {
         RotorWakeConfig_t config; // configures of rotor wake simulation
         RotorState_t rotor_state;
         int max_markers;
+        float dt;
 
     private:
-        void marker_release(void); 
+        void marker_release(void);
+        void init_wake_geometry(void);
 };
 
 /* rotate a vector to given euler angles */

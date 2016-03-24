@@ -44,5 +44,8 @@ static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers)
 void draw_wake(std::vector<Robot*>* robots)
 {
     /* draw FVM vortex filaments */
-    draw_vortex_filament(robots->at(0)->wakes.at(0)->wake_state[0]);
+    for (int i = 0; i < robots->size(); i++)
+        for (int j = 0; j < robots->at(i)->wakes.size(); j++)
+            for (int k = 0; k < robots->at(i)->wakes.at(j)->rotor_state.frame.n_blades; k++)
+                draw_vortex_filament(robots->at(i)->wakes.at(j)->wake_state[k]);
 }

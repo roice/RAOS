@@ -54,6 +54,7 @@ void Robot::init(void)
                 = ((HLframe_t*)(config.frame))->main_prop_radius;
             new_wake->rotor_state.frame.n_blades
                 = ((HLframe_t*)(config.frame))->main_prop_blades;
+            new_wake->rotor_state.thrust = 10*9.8; // 0.1 kg
             memcpy(new_wake->rotor_state.pos, state.pos, sizeof(state.pos));
             memcpy(new_wake->rotor_state.attitude,
                 state.attitude, sizeof(state.attitude));
