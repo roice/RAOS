@@ -64,6 +64,10 @@ find_package(CUDA REQUIRED)
 # nvcc flags
 set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
 
+#---- External HDF5 related, for data recording
+find_package(HDF5 COMPONENTS C CXX REQUIRED)
+include_directories(${HDF5_INCLUDE_DIRS})
+
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #============== Build the project ================
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -101,7 +105,7 @@ add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/draw_arena.cxx ui/draw/draw_plume.cxx
     ui/draw/draw_wake.cxx)
 # compile main file
-add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx SimConfig.cxx)
+add_executable(${PRJ_NAME} SimMain.cxx SimLoop.cxx SimConfig.cxx SimRecord.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 
 #---- start linking ----
@@ -120,6 +124,8 @@ target_link_libraries(${PRJ_NAME} fltk_images)
 target_link_libraries(${PRJ_NAME} cblas)
 target_link_libraries(${PRJ_NAME} blas)
 target_link_libraries(${PRJ_NAME} gfortran)
+# link extern hdf5 library
+target_link_libraries(${PRJ_NAME} ${HDF5_LIBRARIES})
 
 # install
 #install(TARGETS ${PRJ_NAME}

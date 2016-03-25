@@ -57,7 +57,7 @@ void RotorWake::marker_release(void) {
     memset(new_marker.vel, 0, sizeof(new_marker.vel));
 
     // calculate the tip vortex circulation: Gamma
-    new_marker.Gamma = - 2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
+    new_marker.Gamma = -2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
 
     for (int i = 0; i < rotor_state.frame.n_blades; i++) {
         // calculate the position of this marker     
@@ -82,7 +82,7 @@ void RotorWake::init_wake_geometry(void) {
     memset(new_marker.vel, 0, sizeof(new_marker.vel));
     
     // calculate the tip vortex circulation: Gamma
-    new_marker.Gamma = 2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
+    new_marker.Gamma = -2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
 
     // calculate thrust coefficient and sigma
     C_T = rotor_state.thrust/(1.185f*PI*pow(rotor_state.Omega,2)*pow(rotor_state.frame.radius,4));
@@ -106,7 +106,7 @@ void RotorWake::init_wake_geometry(void) {
             // calculate the position of this marker     
             memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
             new_marker.pos[2] += z_tip*0.5;
-            rotor_state.psi = (psi_rad - floor(psi_rad/(2*PI))*(2*PI))*180.0f/PI;
+            rotor_state.psi = -(psi_rad - floor(psi_rad/(2*PI))*(2*PI))*180.0f/PI;
             rotate_vector(p_marker, new_marker.pos, rotor_state.psi + 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
             // push to wake state array
             wake_state[i]->push_back(new_marker);

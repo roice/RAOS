@@ -29,6 +29,7 @@
 #include "ui/icons/icons.h" // pixmap icons used in Tool bar
 #include "ui/SimView.h" // 3D RAO view
 #include "SimConfig.h" // runtime RAOS configs
+#include "SimRecord.h"
 
 /*------- Configuration Dialog -------*/
 struct ConfigDlg_widgets { // for parameter saving
@@ -264,6 +265,9 @@ void ToolBar::cb_button_stop(Fl_Widget *w, void *data)
     struct ToolBar_Widgets *widgets = (struct ToolBar_Widgets*)data;
     widgets->start->clear();
     widgets->pause->clear();
+
+    /* Save data */
+    SimSaveData();
 }
 
 void ToolBar::cb_button_config(Fl_Widget *w, void *data)
