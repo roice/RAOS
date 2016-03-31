@@ -80,6 +80,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR})
 #   add cblas dir to search for cblas.h header for linear algebra
 include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/include)
+#   add ziggurat source file to generate normal distribution random numbers
+include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/ziggurat)
 
 #---- library files path settings ----
 # add library dir into lib path
@@ -97,7 +99,8 @@ cuda_add_library(${LIB_MODEL_NAME}
     model/SimModel.cxx
     model/plume.cxx
     model/wake_rotor.cxx model/wake.cu
-    model/robot.cxx model/quadrotor.cxx)
+    model/robot.cxx model/quadrotor.cxx
+    ../3rdparty/ziggurat/ziggurat.cpp)
 # make a library from ui files
 add_library(${LIB_UI_NAME} ui/SimUI.cxx ui/SimView.cxx ui/agv.cxx
     ui/draw/DrawScene.cxx ui/draw/materials.cxx 

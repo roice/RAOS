@@ -22,6 +22,8 @@ VortexMarker_t* dev_wake_markers; // on-device array ...
 VortexMarker_t* dev_wake_markers_mediate; // on-device array ...
 int* idx_end_marker_fila; // on-host array containing index of endpoint of all vortex filaments, for parallel computing
 int* dev_idx_end_marker_fila; // on-device array ...
+FarWakeState_t* far_wakes;
+FarWakeState_t* dev_far_wakes; // on-device array containing the far wake states of rotors
 
 // vel += biot savert induction from segement a-b to position p
 __device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, float3 p, float3 vel)
@@ -97,7 +99,7 @@ __device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, floa
     }
 
     // strength
-    scale = a.Gamma * db_h * __frsqrt_rn(__powf(a.r,4)+db_h*db_h) * (cos_apab+cos_babp) / (4*PI);
+    scale = a.Gamma * db_h * 10000.0f * __frsqrt_rn(__powf(a.r*100,4)+db_h*db_h*10000.0f*10000.0f) * (cos_apab+cos_babp) / (4*PI);
  
     // get induced velocity
     ind.x = ap.y*bp.z - ap.z*bp.y;
@@ -224,7 +226,8 @@ __global__ void CalculateVelofMarkers(VortexMarker_t* markers, int* idx_end, int
             vel.z += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[2];
         }
         // Save the result in global memory for the integration step.
-        markers[row].vel[0] = vel.x;
+/*TODO:*/
+        markers[row].vel[0] = vel.x + 0.5;
         markers[row].vel[1] = vel.y;
         markers[row].vel[2] = vel.z; 
     }
@@ -273,19 +276,28 @@ __global__ void AverageVelofMarkers(VortexMarker_t* markers, VortexMarker_t* mar
 }
 
 /* calculate vortex core radius of markers */
-__global__ void CalculateVtxCoreofMarkers(VortexMarker_t* markers, int num_fila, int num_markers, float dt)
+__global__ void CalculateVtxCoreofMarkers(VortexMarker_t* markers, int num_markers, int* idx_end, int num_fila, float dt)
 {
     VortexMarker_t mkr;
-    float t;
-    int length;
+    float t; // time t, second
+    int fila_start = 0, fila_end = idx_end[num_fila-1]; // start and end index of a filament in markers
     int tid = threadIdx.x + blockIdx.x * blockDim.x;
 
     if (tid < num_markers) {
         mkr = markers[tid];
 
         // calculate life time of this marker (vortex segment)
-        length = num_markers / num_fila;
-        t = (float)(tid % length) / (float)length;
+        for (int i = 0; i < num_fila; i++) {
+            if (idx_end[i] < tid) { // find which filament this marker belongs to
+                if (idx_end[i] > fila_start)
+                    fila_start = idx_end[i];
+            }
+            else {
+                if (idx_end[i] < fila_end)
+                    fila_end = idx_end[i];
+            }
+        }
+        t = (fila_end - tid)*dt;
         /* r_c(t) = sqrt( r_init^2 + 4*alpha*delta*nu*t )
            Here we assume r_init is 0.005 m
            alpha is Lamb's constant which is 1.25643
@@ -293,12 +305,83 @@ __global__ void CalculateVtxCoreofMarkers(VortexMarker_t* markers, int num_fila,
            here we assume delta = 8
            nu is viscous constant of air at 25 degree temperature: 0.01834
         */
-        mkr.r = __fsqrt_ru(0.005f*0.005f + 4.0f*1.25643f*8*0.01834*t);
+        mkr.r = __fsqrt_ru(mkr.r_init*mkr.r_init + 4.0f*1.25643f*8.0*0.01834*t);
     }
     if (tid < num_markers)
         markers[tid] = mkr;
 }
 
+__device__ float complete_elliptic_int_first(float k)
+{
+    return PI/2.0*(1.0 + 0.5*0.5*k*k + 0.5*0.5*0.75*0.75*__powf(k, 4));
+}
+__device__ float complete_elliptic_int_second(float k)
+{
+    return PI/2.0*(1.0 - 0.5*0.5*k*k - 0.5*0.5*0.75*0.75*__powf(k, 4)/3.0);
+}
+__device__ void induced_velocity_vortex_ring(float* center, float radius, float Gamma, float core_radius, VortexMarker_t* mkr)
+{
+    float op[3], op_z, op_r, db_op_z, db_op_r;
+    float u_z, u_r, m, a, b;
+    float db_radius, db_delta;
+
+    db_radius = radius*radius;
+    db_delta = core_radius*core_radius;
+    // vector op
+    for (int j = 0; j < 3; j++)
+        op[j] = mkr->pos[j] - center[j];
+    if (op[0]==0.0f && op[1]==0.0f && op[2]==0.0f) // P is at center
+        mkr->vel[2] += Gamma/(2*radius);
+    else {
+        // op_z, cylindrical coord
+        op_z = op[2]; // implies ring direction of (0, 0, 1)
+        db_op_z = op_z*op_z;
+        // op_r, cylindrical coord
+        db_op_r = op[0]*op[0]+op[1]*op[1]+op[2]*op[2]-op_z*op_z;
+        op_r = __fsqrt_ru(db_op_r);
+        // a, A, m
+        a = __fsqrt_ru((op_r+radius)*(op_r+radius)+db_op_z+db_delta);
+        b = (op_r-radius)*(op_r-radius)+db_op_z+db_delta;
+        m = 4*op_r*radius/(a*a);
+        // u_z, cylindrical coord 
+        u_z = Gamma/(2*PI*a) * ((-(db_op_r-db_radius+db_op_z+db_delta)/b)
+            *complete_elliptic_int_second(m) + complete_elliptic_int_first(m));
+        // u_r, cylindrical coord
+        u_r = Gamma*op_z/(2*PI*op_r*a) * (((db_op_r+db_radius+db_op_z+db_delta)/b)
+            *complete_elliptic_int_second(m) - complete_elliptic_int_first(m));
+        // map u_z, u_r to cartesian coord
+        mkr->vel[2] += u_z; // downward
+        mkr->vel[0] += op[0]*u_r/__fsqrt_ru(op[0]*op[0]+op[1]*op[1]);
+        mkr->vel[1] += op[1]*u_r/__fsqrt_ru(op[0]*op[0]+op[1]*op[1]);
+    }
+}
+/* calculate & add induced velocity of far wake BC */
+__global__ void CalculateIndVelofFarWakeBC(VortexMarker_t* markers, int num_markers, FarWakeState_t* rings, int num_rings)
+{
+    VortexMarker_t mkr;
+    float radius, Gamma; // radius and strength of a vortex ring 
+    float center[3]; // center of the vortex ring
+    int tid = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (tid < num_markers) {
+        mkr = markers[tid];
+        /* calculate induced velocity of far wake vortex ring */
+        for (int i = 0; i < num_rings; i++) {
+            if (rings[i].initialized == true) {
+                radius = rings[i].radius;
+                Gamma = __fsqrt_ru(rings[i].Gamma*rings[i].Gamma); // Gamma>=0
+                center[0] = rings[i].center[0];
+                center[1] = rings[i].center[1];
+                for (int j = 0; j < 1; j++) {
+                    center[2] = rings[i].center[2] + j*rings[i].gap;
+                    induced_velocity_vortex_ring(&center[0], radius, Gamma, rings[i].core_radius, &mkr);
+                }
+            }
+        }
+    }
+    if (tid < num_markers)
+        markers[tid] = mkr;
+}
 
 /* update all of the rotor wakes in the environment
  * this routine will traverse all of the robot instances
@@ -308,6 +391,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     int idx_robot, idx_rotor, idx_blade;
     int num_blade = 0;
     int addr_cp_markers = 0; // index for copy marker states from rotor wake to wake_markers
+    int addr_cp_rotors = 0;
 
 /* Step 1: update velocity & position of markers */
  
@@ -315,6 +399,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     //  the markers are placed contiguously, fila to fila
     for(idx_robot = 0; idx_robot < robots->size(); idx_robot++) {
         for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
+            memcpy(&far_wakes[addr_cp_rotors++], &(robots->at(idx_robot)->wakes.at(idx_rotor)->far_wake), sizeof(FarWakeState_t));
             for (idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++) {
                 std::copy(robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->begin(),
                     robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->end(),
@@ -331,6 +416,8 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
                 addr_cp_markers*sizeof(VortexMarker_t), cudaMemcpyHostToDevice) );
     HANDLE_ERROR( cudaMemcpy(dev_idx_end_marker_fila, idx_end_marker_fila, 
                 num_blade*sizeof(int), cudaMemcpyHostToDevice) );
+    HANDLE_ERROR( cudaMemcpy(dev_far_wakes, far_wakes, 
+                addr_cp_rotors*sizeof(FarWakeState_t), cudaMemcpyHostToDevice) );
     
     // Phase 3: parallel computing
     //  determine threads per block and blocks number, at present addr_cp_markers contains total num of markers
@@ -351,6 +438,14 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     err = cudaGetLastError();
     if (err != cudaSuccess)
         printf("Error: %s\n", cudaGetErrorString(err));
+    //      add far wake boundary condition effect
+#if defined(WAKE_BC_FAR)
+    blocks = (addr_cp_markers + threads -1)/threads;
+    CalculateIndVelofFarWakeBC<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, dev_far_wakes, addr_cp_rotors);
+    err = cudaGetLastError();
+    if (err != cudaSuccess)
+        printf("Error: %s\n", cudaGetErrorString(err));
+#endif
     
     //  <2> calculate position of Lagrangian markers, predict
     blocks = (addr_cp_markers + threads -1)/threads;
@@ -383,7 +478,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     //  <5> calculate vortex core growth
     //    the argument num_blade, num_markers and dt are used to compute lifetime
     blocks = (addr_cp_markers + threads -1)/threads;
-    CalculateVtxCoreofMarkers<<<blocks, threads>>>(dev_wake_markers, num_blade, addr_cp_markers, 0.001);
+    CalculateVtxCoreofMarkers<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, dev_idx_end_marker_fila, num_blade, 0.001);
     err = cudaGetLastError();
     if (err != cudaSuccess) 
         printf("Error: %s\n", cudaGetErrorString(err));
@@ -451,13 +546,15 @@ void WakesInit(std::vector<Robot*>* robots)
 
     // traverse all rotor wakes and got total max number of markers and fila, for allocating mem
     int max_num_markers = 0;
-    int max_num_fila = 0;
+    int max_num_rotors = 0;
+    int max_num_fila = 0; 
     for(int idx_robot = 0; idx_robot < robots->size(); idx_robot++) {// traverse all robots
         for (int idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {// traverse all rotors
+            max_num_rotors++;
             for (int idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++)
             {// traverse all blades
                 max_num_fila++;
-                max_num_markers += robots->at(idx_robot)->wakes.at(idx_rotor)->max_markers;
+                max_num_markers += robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->capacity();
             }
         }
     }
@@ -476,7 +573,14 @@ void WakesInit(std::vector<Robot*>* robots)
         max_num_fila*sizeof(*idx_end_marker_fila), cudaHostAllocDefault) );
     // allocate device memory containing the indexes
     HANDLE_ERROR( cudaMalloc((void**)&dev_idx_end_marker_fila,
-        max_num_fila*sizeof(*dev_idx_end_marker_fila)) ); 
+        max_num_fila*sizeof(*dev_idx_end_marker_fila)) );
+
+    // allocate host memory containing the far wake states
+    HANDLE_ERROR( cudaHostAlloc((void**)&far_wakes,
+        max_num_rotors*sizeof(*far_wakes), cudaHostAllocDefault) );
+    // allocate device memory containing the far wake states
+    HANDLE_ERROR( cudaMalloc((void**)&dev_far_wakes,
+        max_num_rotors*sizeof(*dev_far_wakes)) );
 }
 
 /* close GPU computation */
@@ -490,48 +594,71 @@ void WakesFinish(void)
     HANDLE_ERROR( cudaFreeHost(wake_markers) );
 }
 
+/*************************************************************************/
 /*************** Calculate Induced Velocity at Plume puffs ***************/
+/*************************************************************************/
 // these functions can be called after WakesInit
-
-__global__ void CalculateIndVelatPlumePuffs(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers, FilaState_t* plume, int num_puffs)
-{
-    float3 pos; // position of plume puff to calculate velocity in this thread
-    float3 vel = {0.0f, 0.0f, 0.0f}; // velocity of this marker
-    int tid = threadIdx.x + blockIdx.x * blockDim.x; // ID of this thread
-    int idx_fila, i;
-    bool isend; // the marker to be calculated is an end point or not
-
-    // get the plume fila (puff) which the velocity to be calculated
-    if (tid < num_puffs) 
-    {
-        pos.x = plume[tid].pos[0];
-        pos.y = plume[tid].pos[1];
-        pos.z = plume[tid].pos[2];
-
-        for (i = 0; i < num_markers-1; i++) // every thread can enter this function
-        {// traverse every vortex segments
-            isend = false;
-            for (idx_fila = 0; idx_fila < num_fila; idx_fila++) {
-                if (i == idx_end[idx_fila]) {
-                    isend = true;
-                    break;
-                }
-            }
-            if (isend == false)
-                vel = biot_savart_induction(markers[i], markers[i+1], pos, vel);
-        }
-    }
-
-    // save velocity
-    if (tid < num_puffs) {
-        plume[tid].vel[0] = vel.x;
-        plume[tid].vel[1] = vel.y;
-        plume[tid].vel[2] = vel.z;
-    }
-}
 
 FilaState_t* plume_puffs; // on-host ...
 FilaState_t* dev_plume_puffs; // on-device array containing the states of plume puffs
+
+__global__ void CalculateIndVelatPlumePuffs(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers, int tile_size, int row_sgmts, FilaState_t* plume, int num_puffs)
+{
+    extern __shared__ VortexMarker_t tile_markers[];
+    float3 pos; // position of plume puff to calculate velocity in this thread
+    float3 vel = {0.0f, 0.0f, 0.0f}; // velocity of this marker
+    int idx, i;
+    int row = threadIdx.x%tile_size + blockIdx.x*tile_size; // get row number (the index of puff to be evaluated)
+
+    // get the plume fila (puff) which the velocity to be calculated
+    if (row < num_puffs) 
+    {
+        pos.x = plume[row].pos[0];
+        pos.y = plume[row].pos[1];
+        pos.z = plume[row].pos[2];
+    }
+
+    // compute each tile
+    i = 0;
+    while(true) // every thread can enter this loop
+    {
+        idx = threadIdx.x + blockDim.x*i;
+        if (idx < num_markers)
+            tile_markers[threadIdx.x] = markers[idx]; // copy markers to shared mem for tile calculation 
+        __syncthreads(); // make sure the shared mem has been loaded
+        if (row < num_puffs)
+            vel = tile_calculation_vel_markers(pos, vel, idx/tile_size, tile_size, row_sgmts, markers, idx_end, num_fila, num_markers);
+        __syncthreads(); // make sure every thread has done the calc of this tile
+        
+        if (blockDim.x*(i+1) < num_markers)
+            i++;
+        else
+            break;
+    }
+
+    // save the result of this segment to the end of the shared mem
+    //  at present the shared memory is of no use for computation, so it can be used to temporarily store the segment results
+    if (row < num_puffs) {
+        tile_markers[threadIdx.x].vel[0] = vel.x;
+        tile_markers[threadIdx.x].vel[1] = vel.y;
+        tile_markers[threadIdx.x].vel[2] = vel.z;
+    }
+    __syncthreads(); // make sure the segment results are stored
+ 
+    if (threadIdx.x < tile_size && row < num_puffs) {
+        // sum the velocities computed by multiple (num of row_sgms) threads
+        vel.x = 0.0f; vel.y = 0.0f; vel.z = 0.0f;
+        for (i = 0; i < row_sgmts; i++) {
+            vel.x += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[0];
+            vel.y += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[1];
+            vel.z += tile_markers[threadIdx.x%tile_size+i*tile_size].vel[2];
+        }
+        // Save the result in global memory for the integration step.
+        plume[row].vel[0] = vel.x;
+        plume[row].vel[1] = vel.y;
+        plume[row].vel[2] = vel.z; 
+    }
+}
 
 void WakesIndVelatPlumePuffsUpdate(std::vector<Robot*>* robots, std::vector<FilaState_t>* plume)
 {
@@ -571,10 +698,10 @@ void WakesIndVelatPlumePuffsUpdate(std::vector<Robot*>* robots, std::vector<Fila
     //  launch gpu computing
     cudaError_t err; 
     //  <1> calculate velocity of Lagrangian markers, n-1 state
-    blocks = (addr_cp_markers + threads -1) / threads;
+    blocks = (plume->size() + p -1) / p;
     //  Note: here omitted checks for max number of blocks, since in RAO problem the vortex markers
     //        rarely exceeds 65535*threads.
-    CalculateIndVelatPlumePuffs<<<blocks, threads>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers, dev_plume_puffs, plume->size());
+    CalculateIndVelatPlumePuffs<<<blocks, threads, threads*sizeof(VortexMarker_t)>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers, p, q, dev_plume_puffs, plume->size());
     err = cudaGetLastError();
     if (err != cudaSuccess)
         printf("Error: %s\n", cudaGetErrorString(err));

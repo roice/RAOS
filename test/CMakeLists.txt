@@ -79,7 +79,7 @@ cuda_add_library(${LIB_MODEL_NAME}
     ../src/model/wake_rotor.cxx ../src/model/wake.cu
     ../src/model/robot.cxx ../src/model/quadrotor.cxx)
 # compile main file
-add_executable(${PRJ_NAME} main.cxx)
+add_executable(${PRJ_NAME} main.cxx ../src/SimConfig.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME})
 
 #---- start linking ----

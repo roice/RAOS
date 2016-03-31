@@ -12,6 +12,9 @@
 
 #include <vector>
 
+//#define WAKE_BC_INIT // consider initial boundary condition
+#define WAKE_BC_FAR // consider far wake boundary condition
+
 typedef struct
 {
     float radius; // propeller radius
@@ -33,12 +36,24 @@ typedef struct {
     float vel[3]; // 3D velocity of this marker
     float Gamma; // circulation of i-th segment (i-th marker to (i+1)-th marker)
     float r; // vortex core radius
+    float r_init; // r_0
 }VortexMarker_t;
 
 typedef struct {
     float rounds; // number of revolutions (number of vortex rings to maintain) 
     float dpsi; // delta azimuth angle to release/maintain marker
 }RotorWakeConfig_t; // const since sim init
+
+#if defined(WAKE_BC_FAR)
+typedef struct {// use vortex ring to describe far wake
+    float center[3]; // center of vortex ring
+    float radius; // radius of vortex ring
+    float Gamma;
+    float core_radius;
+    float gap; // distance to the latest marker
+    bool initialized;
+}FarWakeState_t; // state of far wake BC
+#endif
 
 class RotorWake {
     public:
@@ -48,12 +63,21 @@ class RotorWake {
         std::vector<VortexMarker_t>** wake_state; // wake_state[i] is the pointer of a std::vector, which contains the markers of a whole filament
         RotorWakeConfig_t config; // configures of rotor wake simulation
         RotorState_t rotor_state;
+#if defined(WAKE_BC_FAR)
+        FarWakeState_t far_wake;
+#endif
         int max_markers;
         float dt;
 
     private:
         void marker_release(void);
+        void maintain_markers(void);
+#if defined(WAKE_BC_FAR)
+        void update_far_wake_bc(void);
+#endif
+#if defined(WAKE_BC_INIT)
         void init_wake_geometry(void);
+#endif
 };
 
 /* rotate a vector to given euler angles */

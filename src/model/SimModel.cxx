@@ -39,10 +39,16 @@ void SimModel_update(void) {
         robots.at(i)->update();
 
     /* update rotor wakes */
-    WakesUpdate(&robots, "PC");
+    WakesUpdate(&robots, "Euler");
 
     /* update plume */
     WakesIndVelatPlumePuffsUpdate(&robots, plume_get_fila_state());
+
+/* debug */
+/*
+std::vector<FilaState_t>* plume = plume_get_fila_state();
+printf("v_z = %f, size_m = %d\n", plume->back().vel[2], robots.at(0)->wakes.at(0)->wake_state[0]->size());
+*/
     plume_update();
 }
 

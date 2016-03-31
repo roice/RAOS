@@ -19,8 +19,9 @@ Robot::Robot(const char* robot_type_name)
         config.type = helicopter;
         config.wake = on; // calculate wake by default
         config.frame = (HLframe_t*)malloc(sizeof(HLframe_t));
-        ((HLframe_t*)(config.frame))->main_prop_radius = 1.0; // meter
+        ((HLframe_t*)(config.frame))->main_prop_radius = 0.1; // meter
         ((HLframe_t*)(config.frame))->main_prop_blades = 2; // two-blade
+        ((HLframe_t*)(config.frame))->main_prop_chord = 0.01; // chord
         
         memset(state.pos, 0, sizeof(state.pos));
         memset(state.attitude, 0, sizeof(state.attitude));
@@ -54,7 +55,9 @@ void Robot::init(void)
                 = ((HLframe_t*)(config.frame))->main_prop_radius;
             new_wake->rotor_state.frame.n_blades
                 = ((HLframe_t*)(config.frame))->main_prop_blades;
-            new_wake->rotor_state.thrust = 10*9.8; // 0.1 kg
+            new_wake->rotor_state.frame.chord
+                = ((HLframe_t*)(config.frame))->main_prop_chord;
+            new_wake->rotor_state.thrust = 0.2*9.8; // 0.1 kg
             memcpy(new_wake->rotor_state.pos, state.pos, sizeof(state.pos));
             memcpy(new_wake->rotor_state.attitude,
                 state.attitude, sizeof(state.attitude));

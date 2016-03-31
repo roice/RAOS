@@ -10,6 +10,7 @@
 #include <time.h> // for random seed
 #include "model/plume.h"
 #include "SimConfig.h"
+#include "ziggurat.h" // for normal distribution number
 
 /*============== Filament Model ============*/
 #if defined(USE_FILAMENT_MODEL)
@@ -29,10 +30,16 @@ class FilaModel
     public:
         std::vector<FilaState_t> state; // state of fila, a list
 
+        /* parameters for ziggurat method */
+        float fn[128];
+        unsigned int kn[128];
+        float wn[128];
+        unsigned int seed;
+
         void init(void) // fila initialization
         {
             // init delta time
-            dt = 0.1; // sec
+            dt = 0.01; // sec
             // init source pos params
             SimConfig_t *config = SimConfig_get_configs();
             source_pos[0] = config->source.x;
@@ -46,6 +53,9 @@ class FilaModel
             fila_num_need_release = 0.0;
             /* seed the random generator */
             srand48(time(NULL));
+            /* setup ziggurat method to generate normal distribution numbers */
+            r4_nor_setup ( kn, fn, wn );
+            seed = time(NULL);
         }
         void update(void) // update fila
         {
@@ -59,9 +69,14 @@ class FilaModel
                 wind_y = 0;
                 wind_z = 0;
                 // calculate centerline relative dispersion
-                vm_x = drand48() - 0.5;
-                vm_y = drand48() - 0.5;
-                vm_z = drand48() - 0.5;
+                /*
+                vm_x = (drand48() - 0.5);
+                vm_y = (drand48() - 0.5);
+                vm_z = (drand48() - 0.5);
+                */
+                vm_x = 0.2*r4_nor ( seed, kn, fn, wn );
+                vm_y = 0.2*r4_nor ( seed, kn, fn, wn );
+                vm_z = 0.2*r4_nor ( seed, kn, fn, wn );
                 // calculate pos increment
                 state.at(i).pos[0] += (wind_x+vm_x + state.at(i).vel[0]) * dt;
                 state.at(i).pos[1] += (wind_y+vm_y + state.at(i).vel[1]) * dt;
@@ -70,7 +85,7 @@ class FilaModel
         /* Step 2: update sizes of fila */
             for (int i = 0; i < state.size(); i++) // for each fila
             {
-                state.at(i).r += 0.01;
+                state.at(i).r += 0.0001;
             }
         /* Step 3: fila maintainance */
             fila_release();
@@ -87,7 +102,7 @@ class FilaModel
             new_fila.pos[0] = source_pos[0];
             new_fila.pos[1] = source_pos[1];
             new_fila.pos[2] = source_pos[2];
-            new_fila.r = 0.05;
+            new_fila.r = 0.001;
             state.push_back(new_fila);
         }
 };

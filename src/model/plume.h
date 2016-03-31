@@ -15,7 +15,7 @@ void plume_init(void);
 void plume_update(void);
 
 #if defined(USE_FILAMENT_MODEL)
-#define MAX_NUM_PUFFS 1000
+#define MAX_NUM_PUFFS 2000
 typedef struct {
     float pos[3];
     float vel[3];
