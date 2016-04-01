@@ -11,6 +11,7 @@
 #include "model/plume.h"
 #include "SimConfig.h"
 #include "ziggurat.h" // for normal distribution number
+#include "SimModel.h"
 
 /*============== Filament Model ============*/
 #if defined(USE_FILAMENT_MODEL)
@@ -38,8 +39,8 @@ class FilaModel
 
         void init(void) // fila initialization
         {
-            // init delta time
-            dt = 0.01; // sec
+            // init release rate
+            release_rate = 100.0; // release 100 fila per second
             // init source pos params
             SimConfig_t *config = SimConfig_get_configs();
             source_pos[0] = config->source.x;
@@ -57,7 +58,7 @@ class FilaModel
             r4_nor_setup ( kn, fn, wn );
             seed = time(NULL);
         }
-        void update(void) // update fila
+        void update(SimState_t* sim_state) // update fila
         {
             float wind_x, wind_y, wind_z;
             float vm_x, vm_y, vm_z;
@@ -78,9 +79,11 @@ class FilaModel
                 vm_y = 0.2*r4_nor ( seed, kn, fn, wn );
                 vm_z = 0.2*r4_nor ( seed, kn, fn, wn );
                 // calculate pos increment
-                state.at(i).pos[0] += (wind_x+vm_x + state.at(i).vel[0]) * dt;
-                state.at(i).pos[1] += (wind_y+vm_y + state.at(i).vel[1]) * dt;
-                state.at(i).pos[2] += (wind_z+vm_z + state.at(i).vel[2]) * dt;
+                state.at(i).pos[0] += (wind_x+vm_x + state.at(i).vel[0]) * sim_state->dt;
+                state.at(i).pos[1] += (wind_y+vm_y + state.at(i).vel[1]) * sim_state->dt;
+                state.at(i).pos[2] += (wind_z+vm_z + state.at(i).vel[2]) * sim_state->dt;
+                if (state.at(i).pos[2] < 0.0)
+                    state.at(i).pos[2] = -state.at(i).pos[2];
             }
         /* Step 2: update sizes of fila */
             for (int i = 0; i < state.size(); i++) // for each fila
@@ -88,14 +91,36 @@ class FilaModel
                 state.at(i).r += 0.0001;
             }
         /* Step 3: fila maintainance */
-            fila_release();
-            if (state.size() > MAX_NUM_PUFFS)
-                state.erase(state.begin());                
+            fila_num_need_release += release_rate*sim_state->dt;
+            // remove fila which moved outside sim area
+            int n = state.size(), i = 0;
+            bool moved_outside = false;
+            while (i != n) {
+                for (int j = 0; j < 3; j++) {
+                    if (state.at(i).pos[j] > 5.0 || state.at(i).pos[j] < -5.0)
+                        moved_outside = true;
+                }
+                if (moved_outside == true) {
+                    state.erase(state.begin()+i);
+                    n--;
+                    moved_outside = false;
+                }
+                else
+                    i++;
+            }
+            // release & remove fila
+            while (fila_num_need_release >= 1.0) {
+                fila_release();
+                fila_num_need_release -= 1.0;
+                if (state.size() > MAX_NUM_PUFFS)
+                    state.erase(state.begin());
+            } 
         }
     private: 
-        float dt; // delta time
         float source_pos[3]; // source pos
         float fila_num_need_release; // "buffer" fila
+        float mole_per_fila; // moles per fila (puff, parcel)
+        float release_rate; // puffs(fila, parcels)/s
         void fila_release(void) // release a filament (puff)
         {
             FilaState_t new_fila;
@@ -121,10 +146,10 @@ void plume_init(void)
 #endif
 }
 
-void plume_update(void)
+void plume_update(SimState_t* sim_state)
 {
 #if defined(USE_FILAMENT_MODEL)
-    fila->update();
+    fila->update(sim_state);
 #endif
 }
 

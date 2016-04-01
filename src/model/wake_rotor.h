@@ -13,7 +13,11 @@
 #include <vector>
 
 //#define WAKE_BC_INIT // consider initial boundary condition
-#define WAKE_BC_FAR // consider far wake boundary condition
+//#define WAKE_BC_FAR // consider far wake boundary condition
+//#define WAKE_IGE // consider in-ground-effect
+
+#define WAKE_ROTOR_CLOCKWISE 1.0f
+#define WAKE_ROTOR_CCLOCKWISE (-1.0f)
 
 typedef struct
 {
@@ -26,6 +30,7 @@ typedef struct {
     float pos[3];	/* position coordinate (earth axis x), volatile */
     float attitude[3]; // [yaw, pitch, roll]
     float Omega; // rotation angular speed, volatile
+    float direction; // rotation direction, 1.0 for clockwise, -1.0 for counter-clockwise
     float psi; // blade azimuth, [0, 360), volatile
     float thrust; // the thrust this rotor produce, N
     RotorFrame_t frame; // const
@@ -59,7 +64,7 @@ class RotorWake {
     public:
         RotorWake(void); // constructor
         void init(void); // rotor wake init
-        void maintain(void); // marker release & remove, to maintain a fixed length of vortex filament
+        void maintain(const char*); // marker release & remove, to maintain a fixed length of vortex filament
         std::vector<VortexMarker_t>** wake_state; // wake_state[i] is the pointer of a std::vector, which contains the markers of a whole filament
         RotorWakeConfig_t config; // configures of rotor wake simulation
         RotorState_t rotor_state;

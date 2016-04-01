@@ -61,6 +61,8 @@ set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_
 include_directories(${PROJECT_SOURCE_DIR}/../src)
 #   add cblas dir to search for cblas.h header for linear algebra
 include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/blas/CBLAS/include)
+#   add ziggurat
+include_directories(${PROJECT_SOURCE_DIR}/../3rdparty/ziggurat)
 
 #---- library files path settings ----
 # add library dir into lib path
@@ -77,9 +79,10 @@ cuda_add_library(${LIB_MODEL_NAME}
     ../src/model/SimModel.cxx
     ../src/model/plume.cxx
     ../src/model/wake_rotor.cxx ../src/model/wake.cu
-    ../src/model/robot.cxx ../src/model/quadrotor.cxx)
+    ../src/model/robot.cxx ../src/model/quadrotor.cxx
+    ../3rdparty/ziggurat/ziggurat.cpp)
 # compile main file
-add_executable(${PRJ_NAME} main.cxx ../src/SimConfig.cxx)
+add_executable(${PRJ_NAME} main.cxx ../src/SimConfig.cxx ../src/SimLoop.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME})
 
 #---- start linking ----

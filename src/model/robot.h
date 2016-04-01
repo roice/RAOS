@@ -25,8 +25,10 @@ typedef struct {
 
 typedef struct {    
     float pos[3];	/* position coordinate (earth axis x), volatile */
+    float vel[3];
     float attitude[3]; // yaw, pitch, roll
     int   leds;
+    float gas_sensor; // reading of gas sensor
 }RobotState_t;
 
 class Robot {
@@ -38,6 +40,7 @@ class Robot {
         std::vector<RotorWake*> wakes; // pointer of array containing pointers of RotorWake instances describing wakes of rotors (if has)
         RobotState_t state; // robot state
         RobotConfig_t config; // robot configs
+        std::vector<RobotState_t> record;
 };
 
 #endif

@@ -21,10 +21,18 @@ void RotorWake::init(void) // rotor wake initialization
 
     // init vortex markers state
     max_markers = ceil(360.0*config.rounds/config.dpsi); // calculate max lagrangian markers of a vortex filament, 10.0 degree is an arbitrary number
+#if defined(WAKE_IGE)
+    wake_state = (std::vector<VortexMarker_t>**)malloc(rotor_state.frame.n_blades*2*sizeof(std::vector<VortexMarker_t>*));
+#else
     wake_state = (std::vector<VortexMarker_t>**)malloc(rotor_state.frame.n_blades*sizeof(std::vector<VortexMarker_t>*));
+#endif
     for (int i = 0; i < rotor_state.frame.n_blades; i++) {
         wake_state[i] = new std::vector<VortexMarker_t>;
         wake_state[i]->reserve(max_markers+ceil(360.0/config.dpsi)+10); // 10 is an arbitrary number, can be num>=1
+#if defined(WAKE_IGE)
+        wake_state[i+rotor_state.frame.n_blades] = new std::vector<VortexMarker_t>;
+        wake_state[i+rotor_state.frame.n_blades]->reserve(max_markers+ceil(360.0/config.dpsi)+10); // 10 is an arbitrary number, can be num>=1
+#endif
     }
 
 #if defined(WAKE_BC_INIT)
@@ -37,22 +45,64 @@ void RotorWake::init(void) // rotor wake initialization
 #endif
 }
 
-void RotorWake::maintain(void) 
+void RotorWake::maintain(const char* marker_maintain_type)
 {/* marker maintainance */
-   
+    if (strcmp(marker_maintain_type, "one_by_one") == 0) {
 #if defined(WAKE_BC_FAR)
-    if (wake_state[0]->size() >= max_markers) {// consider far wake BC 
-        // maintain markers
-        maintain_markers();
-        // update far wake BC
-        update_far_wake_bc();
-    }
-    else {// do not consider far wake BC, develop to max_markers first
-        maintain_markers();
-    } 
+        if (wake_state[0]->size() >= max_markers) {// consider far wake BC 
+            // maintain markers
+            maintain_markers();
+            // update far wake BC
+            update_far_wake_bc();
+        }
+        else // do not consider far wake BC, develop to max_markers first
+            maintain_markers();
 #else
-    maintain_markers();
+        maintain_markers();
 #endif
+    }
+    else if (strcmp(marker_maintain_type, "turn_by_turn") == 0) {
+        /* calculate average velocity at the rotor */
+        int markers_per_turn = ceil(360.0/config.dpsi);
+        double sum_vel[3] = {0.0, 0.0, 0.0};
+        float vel[3];
+        int count = 0; 
+        for (int i = 0; i < rotor_state.frame.n_blades; i++)
+            for (int j = wake_state[i]->size()-1; j > wake_state[i]->size()-markers_per_turn-1; j--) {
+                count++;
+                for (int k = 0; k < 3; k++) {
+                    sum_vel[k] += wake_state[i]->at(j).vel[k];
+                }
+            }
+        for (int i = 0; i < 3; i++)
+            vel[i] = sum_vel[i]/double(count);
+        /* release a turn of markers */
+        VortexMarker_t new_marker;
+        float p_marker[3] = {rotor_state.frame.radius, 0, 0};
+        memset(new_marker.vel, 0, sizeof(new_marker.vel));
+        // calculate the tip vortex circulation: Gamma
+        new_marker.Gamma = -(rotor_state.direction)*2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
+        // calculate initial radius of the tip vortex
+        new_marker.r_init = 0.03*rotor_state.frame.chord;
+        for (int i = 0; i < rotor_state.frame.n_blades; i++) {
+            for (int j = markers_per_turn-1; j >= 0; j--) {
+                // calculate the position of this marker     
+                memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
+                rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
+                for (int k = 0; k < 3; k++) // integrate
+                    new_marker.pos[k] += vel[k]*j*(config.dpsi*PI/180.0)/rotor_state.Omega;
+                // calculate radius of vortex core
+                new_marker.r = sqrt(new_marker.r_init*new_marker.r_init + 4.0f*1.25643f*4.0*0.01834f*j*(config.dpsi*PI/180.0)/rotor_state.Omega);
+                // push to wake state array
+                wake_state[i]->push_back(new_marker);
+            }
+        }
+        /* remove a turn of markers */
+        for (int i = 0; i < rotor_state.frame.n_blades; i++)
+            if (wake_state[i]->size() > max_markers)
+                for (int j = 0; j < markers_per_turn; j++)
+                    wake_state[i]->erase(wake_state[i]->begin());
+    }
 }
 
 #if defined(WAKE_BC_FAR)
@@ -103,8 +153,12 @@ void RotorWake::maintain_markers(void) {
     marker_release();
     // remove old markers
     if (wake_state[0]->size() > max_markers) {
-        for (int i = 0; i < rotor_state.frame.n_blades; i++)
+        for (int i = 0; i < rotor_state.frame.n_blades; i++) {
             wake_state[i]->erase(wake_state[i]->begin());
+#if defined(WAKE_IGE)
+            wake_state[i+rotor_state.frame.n_blades]->erase(wake_state[i+rotor_state.frame.n_blades]->begin());
+#endif
+        }
     }
 }
 
@@ -117,7 +171,7 @@ void RotorWake::marker_release(void) {
     memset(new_marker.vel, 0, sizeof(new_marker.vel));
 
     // calculate the tip vortex circulation: Gamma
-    new_marker.Gamma = -2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
+    new_marker.Gamma = -(rotor_state.direction)*2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
 
     // calculate initial radius of the tip vortex
     new_marker.r_init = 0.03*rotor_state.frame.chord;
@@ -129,10 +183,16 @@ void RotorWake::marker_release(void) {
         rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
         // push to wake state array
         wake_state[i]->push_back(new_marker);
+#if defined(WAKE_IGE)
+        new_marker.pos[2] = -new_marker.pos[2];
+        new_marker.Gamma = -new_marker.Gamma;
+        wake_state[i+rotor_state.frame.n_blades]->push_back(new_marker);
+        new_marker.Gamma = -new_marker.Gamma;
+#endif
     }
 
     // update blade azimuth
-    rotor_state.psi += config.dpsi;
+    rotor_state.psi += (rotor_state.direction)*config.dpsi;
     if (rotor_state.psi >= 360.0)
         rotor_state.psi -= 360.0;
 }
@@ -146,7 +206,7 @@ void RotorWake::init_wake_geometry(void) {
     memset(new_marker.vel, 0, sizeof(new_marker.vel));
     
     // calculate the tip vortex circulation: Gamma
-    new_marker.Gamma = -2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
+    new_marker.Gamma = -(rotor_state.direction)*2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
 
     // calculate initial radius of the tip vortex
     new_marker.r_init = 0.1*rotor_state.frame.chord;
@@ -174,7 +234,7 @@ void RotorWake::init_wake_geometry(void) {
             // calculate the position of this marker     
             memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
             new_marker.pos[2] += z_tip;
-            rotor_state.psi = -(psi_rad - floor(psi_rad/(2*PI))*(2*PI))*180.0f/PI;
+            rotor_state.psi = -(rotor_state.direction)*(psi_rad - floor(psi_rad/(2*PI))*(2*PI))*180.0f/PI;
             rotate_vector(p_marker, new_marker.pos, rotor_state.psi + 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
             // push to wake state array
             wake_state[i]->push_back(new_marker);
@@ -189,7 +249,7 @@ RotorWake::RotorWake(void)
 {
     // init configurations
     config.rounds = 20; // 20 rounds
-    config.dpsi = 10; // 10 deg
+    config.dpsi = 20; // 10 deg
 
     // init rotor state
     rotor_state.frame.radius = 0.1; // meter
@@ -200,10 +260,13 @@ RotorWake::RotorWake(void)
     rotor_state.Omega = 50*2*PI; // rad/s
     rotor_state.psi = 0;
     rotor_state.thrust = 1.0; // 1 N, ~100 g
+    rotor_state.direction = WAKE_ROTOR_CLOCKWISE;
     
     max_markers = 1000;
 
+#if defined(WAKE_BC_FAR)
     far_wake.initialized = false;
+#endif
 }
 
 /* End of file wake_rotor.cxx */

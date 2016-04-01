@@ -13,6 +13,12 @@
 
 #include "model/robot.h"
 
+typedef struct {
+    double time;
+    double dt;
+    bool initialized;
+}SimState_t;
+
 void SimModel_init(void);
 void SimModel_update(void);
 void SimModel_finish(void);

@@ -16,7 +16,9 @@ typedef struct
 {
     float size; // distance between two diagonal motors
     float prop_radius; // propeller radius
+    float prop_chord; // chord of propellers
     int prop_blades; // number of blades of a propeller
+    float mass;
 } QRframe_t;
 
 /* rotate a vector to given euler angles */

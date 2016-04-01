@@ -10,6 +10,7 @@
 #include "model/wake_rotor.h"
 #include "model/error_cuda.h"
 #include "model/plume.h" // for wake-induced velocity computation of plume puffs
+#include "model/SimModel.h"
 
 #define PI 3.14159265358979323846
 
@@ -22,8 +23,10 @@ VortexMarker_t* dev_wake_markers; // on-device array ...
 VortexMarker_t* dev_wake_markers_mediate; // on-device array ...
 int* idx_end_marker_fila; // on-host array containing index of endpoint of all vortex filaments, for parallel computing
 int* dev_idx_end_marker_fila; // on-device array ...
+#if defined(WAKE_BC_FAR)
 FarWakeState_t* far_wakes;
 FarWakeState_t* dev_far_wakes; // on-device array containing the far wake states of rotors
+#endif
 
 // vel += biot savert induction from segement a-b to position p
 __device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, float3 p, float3 vel)
@@ -305,7 +308,7 @@ __global__ void CalculateVtxCoreofMarkers(VortexMarker_t* markers, int num_marke
            here we assume delta = 8
            nu is viscous constant of air at 25 degree temperature: 0.01834
         */
-        mkr.r = __fsqrt_ru(mkr.r_init*mkr.r_init + 4.0f*1.25643f*8.0*0.01834*t);
+        mkr.r = __fsqrt_ru(mkr.r_init*mkr.r_init + 4.0f*1.25643f*4.0*0.01834*t);
     }
     if (tid < num_markers)
         markers[tid] = mkr;
@@ -355,6 +358,8 @@ __device__ void induced_velocity_vortex_ring(float* center, float radius, float 
         mkr->vel[1] += op[1]*u_r/__fsqrt_ru(op[0]*op[0]+op[1]*op[1]);
     }
 }
+
+#if defined(WAKE_BC_FAR)
 /* calculate & add induced velocity of far wake BC */
 __global__ void CalculateIndVelofFarWakeBC(VortexMarker_t* markers, int num_markers, FarWakeState_t* rings, int num_rings)
 {
@@ -382,16 +387,19 @@ __global__ void CalculateIndVelofFarWakeBC(VortexMarker_t* markers, int num_mark
     if (tid < num_markers)
         markers[tid] = mkr;
 }
+#endif
 
 /* update all of the rotor wakes in the environment
  * this routine will traverse all of the robot instances
  * and update all of the Lagrangian markers for all robots */
-void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
+void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, SimState_t* sim_state)
 {
     int idx_robot, idx_rotor, idx_blade;
     int num_blade = 0;
     int addr_cp_markers = 0; // index for copy marker states from rotor wake to wake_markers
+#if defined(WAKE_BC_FAR)
     int addr_cp_rotors = 0;
+#endif
 
 /* Step 1: update velocity & position of markers */
  
@@ -399,7 +407,9 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     //  the markers are placed contiguously, fila to fila
     for(idx_robot = 0; idx_robot < robots->size(); idx_robot++) {
         for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
+#if defined(WAKE_BC_FAR)
             memcpy(&far_wakes[addr_cp_rotors++], &(robots->at(idx_robot)->wakes.at(idx_rotor)->far_wake), sizeof(FarWakeState_t));
+#endif
             for (idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++) {
                 std::copy(robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->begin(),
                     robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->end(),
@@ -410,14 +420,30 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
             }
         }
     }// traversed all rotor wakes and got total number of markers
+#if defined(WAKE_IGE)
+    for(idx_robot = 0; idx_robot < robots->size(); idx_robot++) {
+        for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
+            for (idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++) {
+                std::copy(robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade+robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades]->begin(),
+                    robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade+robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades]->end(),
+                    &wake_markers[addr_cp_markers]);
+                addr_cp_markers += robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade+robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades]->size();
+                idx_end_marker_fila[num_blade] = addr_cp_markers-1; // the address of the last element, hence -1
+                num_blade++;
+            }
+        }
+    }
+#endif
 
     // Phase 2: copy array wake_markers & idx_wake_markers to GPU's dev_wake_markers
     HANDLE_ERROR( cudaMemcpy(dev_wake_markers, wake_markers, 
                 addr_cp_markers*sizeof(VortexMarker_t), cudaMemcpyHostToDevice) );
     HANDLE_ERROR( cudaMemcpy(dev_idx_end_marker_fila, idx_end_marker_fila, 
                 num_blade*sizeof(int), cudaMemcpyHostToDevice) );
+#if defined(WAKE_BC_FAR)
     HANDLE_ERROR( cudaMemcpy(dev_far_wakes, far_wakes, 
                 addr_cp_rotors*sizeof(FarWakeState_t), cudaMemcpyHostToDevice) );
+#endif
     
     // Phase 3: parallel computing
     //  determine threads per block and blocks number, at present addr_cp_markers contains total num of markers
@@ -449,7 +475,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     
     //  <2> calculate position of Lagrangian markers, predict
     blocks = (addr_cp_markers + threads -1)/threads;
-    CalculatePosofMarkersFE<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, 0.001);
+    CalculatePosofMarkersFE<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, sim_state->dt);
     err = cudaGetLastError();
     if (err != cudaSuccess) 
         printf("Error: %s\n", cudaGetErrorString(err));
@@ -470,7 +496,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     err = cudaGetLastError();
     if (err != cudaSuccess) 
         printf("Error: %s\n", cudaGetErrorString(err));
-    CalculatePosofMarkersFE<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, 0.001);
+    CalculatePosofMarkersFE<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, sim_state->dt);
     err = cudaGetLastError();
     if (err != cudaSuccess) 
         printf("Error: %s\n", cudaGetErrorString(err));
@@ -478,7 +504,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
     //  <5> calculate vortex core growth
     //    the argument num_blade, num_markers and dt are used to compute lifetime
     blocks = (addr_cp_markers + threads -1)/threads;
-    CalculateVtxCoreofMarkers<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, dev_idx_end_marker_fila, num_blade, 0.001);
+    CalculateVtxCoreofMarkers<<<blocks, threads>>>(dev_wake_markers, addr_cp_markers, dev_idx_end_marker_fila, num_blade, 20.0/360.0/50.0);
     err = cudaGetLastError();
     if (err != cudaSuccess) 
         printf("Error: %s\n", cudaGetErrorString(err));
@@ -499,13 +525,28 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme)
             }
         }
     }
+#if defined(WAKE_IGE)
+    for(idx_robot = 0; idx_robot < robots->size(); idx_robot++) {
+        for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
+            for (idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++) {
+                std::copy(&wake_markers[addr_cp_markers],
+                    &wake_markers[addr_cp_markers+robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade+robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades]->size()],
+                robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade+robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades]->data());
+                addr_cp_markers += robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade+robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades]->size();
+            }
+        }
+    }
+#endif
 
 
 /* Step 2: maintain markers of wakes */
     for(idx_robot = 0; idx_robot < robots->size(); idx_robot++)
     {
         for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
-            robots->at(idx_robot)->wakes.at(idx_rotor)->maintain();
+            if (sim_state->initialized)
+                robots->at(idx_robot)->wakes.at(idx_rotor)->maintain("turn_by_turn");
+            else
+                robots->at(idx_robot)->wakes.at(idx_rotor)->maintain("one_by_one");
         }
     }
 }
@@ -553,8 +594,16 @@ void WakesInit(std::vector<Robot*>* robots)
             max_num_rotors++;
             for (int idx_blade = 0; idx_blade < robots->at(idx_robot)->wakes.at(idx_rotor)->rotor_state.frame.n_blades; idx_blade++)
             {// traverse all blades
+#if defined(WAKE_IGE)
+                max_num_fila+=2;
+#else
                 max_num_fila++;
+#endif
+#if defined(WAKE_IGE)
+                max_num_markers += 2*robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->capacity();
+#else
                 max_num_markers += robots->at(idx_robot)->wakes.at(idx_rotor)->wake_state[idx_blade]->capacity();
+#endif
             }
         }
     }
@@ -575,12 +624,14 @@ void WakesInit(std::vector<Robot*>* robots)
     HANDLE_ERROR( cudaMalloc((void**)&dev_idx_end_marker_fila,
         max_num_fila*sizeof(*dev_idx_end_marker_fila)) );
 
+#if defined(WAKE_BC_FAR)
     // allocate host memory containing the far wake states
     HANDLE_ERROR( cudaHostAlloc((void**)&far_wakes,
         max_num_rotors*sizeof(*far_wakes), cudaHostAllocDefault) );
     // allocate device memory containing the far wake states
     HANDLE_ERROR( cudaMalloc((void**)&dev_far_wakes,
         max_num_rotors*sizeof(*dev_far_wakes)) );
+#endif
 }
 
 /* close GPU computation */

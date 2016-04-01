@@ -8,11 +8,13 @@
 #define PLUME_H
 
 #include <vector>
+#include "model/SimModel.h"
+
 
 #define USE_FILAMENT_MODEL // use filament plume model
 
 void plume_init(void);
-void plume_update(void);
+void plume_update(SimState_t*);
 
 #if defined(USE_FILAMENT_MODEL)
 #define MAX_NUM_PUFFS 2000

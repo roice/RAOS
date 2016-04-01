@@ -32,9 +32,11 @@ Robot::Robot(const char* robot_type_name)
         config.wake = on; // calculate wake by default
         config.frame = (QRframe_t*)malloc(sizeof(QRframe_t));
         ((QRframe_t*)(config.frame))->size = 0.45;
-        ((QRframe_t*)(config.frame))->prop_radius = 0.1;
+        ((QRframe_t*)(config.frame))->prop_radius = 0.15; // m
+        ((QRframe_t*)(config.frame))->prop_chord = 0.01; // m
         ((QRframe_t*)(config.frame))->prop_blades = 2;
-        
+        ((QRframe_t*)(config.frame))->mass = 0.8; // kg
+
         memset(state.pos, 0, sizeof(state.pos));
         memset(state.attitude, 0, sizeof(state.attitude));
     }
@@ -76,6 +78,14 @@ void Robot::init(void)
                     = ((QRframe_t*)(config.frame))->prop_radius;
                 new_wake->rotor_state.frame.n_blades
                     = ((QRframe_t*)(config.frame))->prop_blades;
+                new_wake->rotor_state.frame.chord
+                    = ((QRframe_t*)(config.frame))->prop_chord;
+                new_wake->rotor_state.thrust
+                    = ((QRframe_t*)(config.frame))->mass*9.8/4.0; // N
+                if (i%2 == 0)
+                    new_wake->rotor_state.direction = WAKE_ROTOR_CLOCKWISE;
+                else
+                    new_wake->rotor_state.direction = WAKE_ROTOR_CCLOCKWISE;
                 memcpy(new_wake->rotor_state.attitude,
                     state.attitude, sizeof(state.attitude)); 
                 wakes.push_back(new_wake);
@@ -95,6 +105,9 @@ void Robot::init(void)
 }
 
 void Robot::update(void) {
+    /* Save record */
+    record.push_back(state);
+
     /******* Helicopter *******/
     if (config.type == helicopter) {
         /* syncronize rotor attitude and pos with robot */
