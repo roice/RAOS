@@ -78,7 +78,7 @@ wid.c = (10.6u, 5u);
 drawunboxed(len, wid);
 label.top(btex source etex, (4u, 5u+0.1u));
 label.bot(btex plume etex, (7u, 5u-0.3u));
-label.lft(btex quadrotor etex, (9.2u, 9.8u));
+label.lft(btex quadrotor etex, (9.2u, 9.7u));
 
 
 
