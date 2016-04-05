@@ -292,7 +292,7 @@ Fl_Group(Xpos, Ypos, Width, Height)
     tb_widgets.stop = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     tb_widgets.config = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     tb_widgets.record = new Fl_Light_Button(Xpos, Ypos, Width+22, Height); Xpos += Width+22+5;
-    Fl_Box *bar_rest = new Fl_Box(FL_DOWN_BOX, Xpos, Ypos, bar->w()-Xpos, Height, "rest");
+    Fl_Box *bar_rest = new Fl_Box(FL_DOWN_BOX, Xpos, Ypos, bar->w()-Xpos, Height, "");
     resizable(bar_rest); // protect buttons from resizing
     // icons
     Fl_Pixmap *icon_start = new Fl_Pixmap(pixmap_icon_play);

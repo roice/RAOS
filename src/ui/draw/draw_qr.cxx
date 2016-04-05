@@ -254,7 +254,7 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
 static void draw_qr_mast(float qrsize)
 {
     glDisable(GL_LIGHTING);
-    glColor3f(0.0, 1.0, 0.0); /* green */
+    glColor3f(1.0, 0.0, 0.0); /* red */
   	glBegin(GL_LINES);
   	glVertex3f(0.0, 0.0, 0.0);
   	glVertex3f(0.0, qrsize/2, 0.0);

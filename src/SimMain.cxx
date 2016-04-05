@@ -35,7 +35,7 @@ int main(int argc, char **argv)
   	SimModel_init();
     
     // Create a window for simulation
-    SimUI ui(800, 600, "Robot Active Olfaction Simulation");
+    SimUI ui(800, 600, "Robot Active Olfaction Simulator");
     
     // Run
     Fl::run();

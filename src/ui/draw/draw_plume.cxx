@@ -27,7 +27,7 @@ void draw_plume(void)
         glPushMatrix(); 
         glTranslatef(fs->at(i).pos[0], fs->at(i).pos[2], -fs->at(i).pos[1]);
         glPushAttrib(GL_LIGHTING_BIT);
-        SimMaterial_smoke(1.0-fs->at(i).r);
+        SimMaterial_chlorine(1.0-fs->at(i).r);
         glutSolidSphere(fs->at(i).r, 8, 3);
         glPopAttrib();
         glPopMatrix();

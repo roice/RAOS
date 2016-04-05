@@ -15,6 +15,7 @@
 #include "model/robot.h"
 #include <stdio.h>
 #include <math.h>
+#include "ui/draw/materials.h"
 
 #define PI 3.14159265358979323846
 
@@ -23,10 +24,12 @@ static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers)
 {
     int n_m = markers->size();
 
-    // draw
-    glDisable(GL_LIGHTING);
+    // draw 
+    glEnable(GL_BLEND);
+  	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glPushAttrib(GL_LIGHTING_BIT);
+    glCallList(VORTICE_MAT);
 
-    glColor3f(0.0, 1.0, 0.0); /* green */
     glBegin(GL_LINES);
     for (int i = 0; i < n_m-1; i++)
     {// draw each segment as line segment    
@@ -39,7 +42,8 @@ static void draw_vortex_filament(const std::vector<VortexMarker_t>* markers)
     }
     glEnd();
     
-    glEnable(GL_LIGHTING);
+    glPopAttrib();
+    glDisable(GL_BLEND);
 }
 
 #if defined(WAKE_BC_FAR)

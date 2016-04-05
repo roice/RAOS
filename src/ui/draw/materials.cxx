@@ -34,6 +34,15 @@ GLfloat grass_shininess[] = { 0 };
 GLfloat smoke_ambuse[] =   { 0.0, 0.0, 0.0, 0.3 };
 GLfloat smoke_specular[] = { 0, 0, 0, 1.0 };
 GLfloat smoke_shininess[] = { 0 };
+
+GLfloat vortice_ambuse[] =   { 0.6, 0.6, 0.6, 0.3 };
+GLfloat vortice_specular[] = { 0, 0, 0, 1.0 };
+GLfloat vortice_shininess[] = { 0 };
+
+GLfloat chlorine_ambuse[] =   { 0.0, 1.0, 0.0, 0.3 };
+GLfloat chlorine_specular[] = { 0, 0, 0, 1.0 };
+GLfloat chlorine_shininess[] = { 0 };
+
 /* functions to create different materials */
 static void create_land_material(void)
 {
@@ -89,6 +98,24 @@ static void create_smoke_material(void)
     glEndList();
 }
 
+static void create_vortice_material(void)
+{
+    glNewList(VORTICE_MAT, GL_COMPILE);
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, vortice_ambuse);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, vortice_specular);
+      glMaterialfv(GL_FRONT, GL_SHININESS, vortice_shininess);
+    glEndList();
+}
+
+static void create_chlorine_material(void)
+{
+    glNewList(CHLORINE_MAT, GL_COMPILE);
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, chlorine_ambuse);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, chlorine_specular);
+      glMaterialfv(GL_FRONT, GL_SHININESS, chlorine_shininess);
+    glEndList();
+}
+
 void create_materials(void)
 {
     create_land_material();
@@ -97,6 +124,8 @@ void create_materials(void)
     create_cement_material();
     create_grass_material();
     create_smoke_material();
+    create_vortice_material();
+    create_chlorine_material();
 }
 
 // changeable smoke material
@@ -111,6 +140,20 @@ void SimMaterial_smoke(float c)
     glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, smoke_ambuse);
     glMaterialfv(GL_FRONT, GL_SPECULAR, smoke_specular);
     glMaterialfv(GL_FRONT, GL_SHININESS, smoke_shininess);
+}
+
+// changeable chlorine material
+void SimMaterial_chlorine(float c)
+{// 0.0 <= c <= 1.0
+    if (c <= 0.)
+        chlorine_ambuse[3] = 0.01;
+    else if (c >= 1.)
+        chlorine_ambuse[3] = 1.0;
+    else
+        chlorine_ambuse[3] = c;
+    glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, chlorine_ambuse);
+    glMaterialfv(GL_FRONT, GL_SPECULAR, chlorine_specular);
+    glMaterialfv(GL_FRONT, GL_SHININESS, chlorine_shininess);
 }
 
 /* End of materials.cxx */
