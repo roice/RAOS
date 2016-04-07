@@ -49,14 +49,14 @@ void SimModel_init(void)
 
 void SimModel_update(void) {
     /* update strategy */
-    if (sim_state.time > 5.0)
+    if (sim_state.time > 10.0)
         gdm.waypoint_update(robots.at(0), &sim_state);
     /* update robot */
     for (int i = 0; i < robots.size(); i++)
         robots.at(i)->update();
 
     /* update rotor wakes */
-    WakesUpdate(&robots, "Euler", &sim_state);
+    //WakesUpdate(&robots, "Euler", &sim_state);
 
     /* update plume */
     WakesIndVelatPlumePuffsUpdate(&robots, plume_get_fila_state());

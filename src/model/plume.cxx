@@ -5,8 +5,6 @@
  * Date: 2016-02-26 create this file (RAOS)
  */
 #include <vector>
-#include <stdio.h>
-#include <stdlib.h> // drand48 and srand48 on Linux
 #include <time.h> // for random seed
 #include "model/plume.h"
 #include "SimConfig.h"
@@ -15,21 +13,17 @@
 
 /*============== Filament Model ============*/
 #if defined(USE_FILAMENT_MODEL)
-
-
-
-#if defined(WIN32) || defined(__EMX__)
-#  define drand48() (((float) rand())/((float) RAND_MAX))
-#  define srand48(x) (srand((x)))
-#elif defined __APPLE__
-#  define drand48() (((float) rand())/((float) RAND_MAX))
-#  define srand48(x) (srand((x)))
-#endif
-
+typedef struct {
+    float source_pos[3]; // position of the source
+    double pps; // parcels released per second
+    double mpp; // molecules per parcel
+    float lambda; // N(mu, lambda), vm
+} PlumeConfig_t;
 class FilaModel
 {
     public:
         std::vector<FilaState_t> state; // state of fila, a list
+        PlumeConfig_t config; // plume model settings
 
         /* parameters for ziggurat method */
         float fn[128];
@@ -37,36 +31,40 @@ class FilaModel
         float wn[128];
         unsigned int seed;
 
-        void init(void) // fila initialization
+        void init(void) // plume initialization
         {
-            // init release rate
-            release_rate = 100.0; // release 100 fila per second
-            // init source pos params
-            SimConfig_t *config = SimConfig_get_configs();
-            source_pos[0] = config->source.x;
-            source_pos[1] = config->source.y;
-            source_pos[2] = config->source.z;
+            // init settings
+            SimConfig_t* sim_config = SimConfig_get_configs();
+            config.pps = sim_config->source.pps;
+            config.mpp = sim_config->source.mpp;
+            config.source_pos[0] = sim_config->source.x;
+            config.source_pos[1] = sim_config->source.y;
+            config.source_pos[2] = sim_config->source.z;
+            config.lambda = sim_config->plume.lambda;
+
             /* init fila state */
             state.reserve(MAX_NUM_PUFFS+10); // make room for MAX_NUM_PUFFS fila
             /* release first odor pack at source */
             fila_release();
+            
             /* clear number of fila need to release */
             fila_num_need_release = 0.0;
-            /* seed the random generator */
-            srand48(time(NULL));
+
             /* setup ziggurat method to generate normal distribution numbers */
             r4_nor_setup ( kn, fn, wn );
             seed = time(NULL);
         }
+
         void update(SimState_t* sim_state) // update fila
         {
             float wind_x, wind_y, wind_z;
             float vm_x, vm_y, vm_z;
+
         /* Step 1: update positions of fila */
             for (int i = 0; i < state.size(); i++) // for each fila
             {
                 // calculate wind
-                wind_x = 1;
+                wind_x = 0.5;
                 wind_y = 0;
                 wind_z = 0;
                 // calculate centerline relative dispersion
@@ -75,9 +73,9 @@ class FilaModel
                 vm_y = (drand48() - 0.5);
                 vm_z = (drand48() - 0.5);
                 */
-                vm_x = 0.2*r4_nor ( seed, kn, fn, wn );
-                vm_y = 0.2*r4_nor ( seed, kn, fn, wn );
-                vm_z = 0.2*r4_nor ( seed, kn, fn, wn );
+                vm_x = 0.3*r4_nor ( seed, kn, fn, wn );
+                vm_y = 0.3*r4_nor ( seed, kn, fn, wn );
+                vm_z = 0.3*r4_nor ( seed, kn, fn, wn );
                 // calculate pos increment
                 state.at(i).pos[0] += (wind_x+vm_x + state.at(i).vel[0]) * sim_state->dt;
                 state.at(i).pos[1] += (wind_y+vm_y + state.at(i).vel[1]) * sim_state->dt;
@@ -117,10 +115,7 @@ class FilaModel
             } 
         }
     private: 
-        float source_pos[3]; // source pos
         float fila_num_need_release; // "buffer" fila
-        float mole_per_fila; // moles per fila (puff, parcel)
-        float release_rate; // puffs(fila, parcels)/s
         void fila_release(void) // release a filament (puff)
         {
             FilaState_t new_fila;

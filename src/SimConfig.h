@@ -10,6 +10,8 @@
  * Date: 2016-02-25 create this file
  */
 
+#include <string>
+
 typedef struct {
     /* width, length and height */
     float w;
@@ -22,14 +24,21 @@ typedef struct {
     float x;
     float y;
     float z;
+    int pps;
+    double mpp;
     /*  */
 }SimConfig_Source_t;
+
+typedef struct {
+    float lambda;
+}SimConfig_Plume_t;
 
 typedef struct {
     /* init pos */
     float init_x;
     float init_y;
     float init_z;
+    std::string type;
 }SimConfig_Robot_t;
 
 /* configuration struct */
@@ -37,6 +46,7 @@ typedef struct {
     /* Arena */
     SimConfig_Arena_t arena;
     SimConfig_Source_t source;
+    SimCOnfig_Plume_t plume;
     SimConfig_Robot_t robot;
 } SimConfig_t;
 
