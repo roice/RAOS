@@ -34,9 +34,8 @@ cd $prjtop/3rdparty/blas/CBLAS
 make
 mv lib/cblas_*.a lib/libcblas.a
 
-
 ##======== Compile RAOS ========
-cd $prjtop/src
+cd $prjtop
 mkdir build
 cd build
 cmake ..
