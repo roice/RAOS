@@ -56,7 +56,7 @@ void SimModel_update(void) {
         robots.at(i)->update();
 
     /* update rotor wakes */
-    //WakesUpdate(&robots, "Euler", &sim_state);
+    WakesUpdate(&robots, "Euler", &sim_state);
 
     /* update plume */
     WakesIndVelatPlumePuffsUpdate(&robots, plume_get_fila_state());

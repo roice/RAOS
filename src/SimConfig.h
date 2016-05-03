@@ -46,7 +46,7 @@ typedef struct {
     /* Arena */
     SimConfig_Arena_t arena;
     SimConfig_Source_t source;
-    SimCOnfig_Plume_t plume;
+    SimConfig_Plume_t plume;
     SimConfig_Robot_t robot;
 } SimConfig_t;
 

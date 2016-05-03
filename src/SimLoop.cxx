@@ -14,7 +14,7 @@
 
 GasDistMapping::GasDistMapping(void)
 {
-    float z = 1.8; // m
+    float z = 2.4; // m
 
     for (int i = 0; i < 20; i++) {
         zigzag_waypoints[i][2] = z;

@@ -89,7 +89,7 @@ class FilaModel
                 state.at(i).r += 0.0001;
             }
         /* Step 3: fila maintainance */
-            fila_num_need_release += release_rate*sim_state->dt;
+            fila_num_need_release += config.pps*sim_state->dt;
             // remove fila which moved outside sim area
             int n = state.size(), i = 0;
             bool moved_outside = false;
@@ -119,9 +119,9 @@ class FilaModel
         void fila_release(void) // release a filament (puff)
         {
             FilaState_t new_fila;
-            new_fila.pos[0] = source_pos[0];
-            new_fila.pos[1] = source_pos[1];
-            new_fila.pos[2] = source_pos[2];
+            new_fila.pos[0] = config.source_pos[0];
+            new_fila.pos[1] = config.source_pos[1];
+            new_fila.pos[2] = config.source_pos[2];
             new_fila.r = 0.001;
             state.push_back(new_fila);
         }
