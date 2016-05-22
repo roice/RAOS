@@ -122,6 +122,9 @@ class FilaModel
             new_fila.pos[0] = config.source_pos[0];
             new_fila.pos[1] = config.source_pos[1];
             new_fila.pos[2] = config.source_pos[2];
+            new_fila.vel[0] = 0;
+            new_fila.vel[1] = 0;
+            new_fila.vel[2] = 0;
             new_fila.r = 0.001;
             state.push_back(new_fila);
         }

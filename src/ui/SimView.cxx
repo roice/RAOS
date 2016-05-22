@@ -13,10 +13,11 @@
 
 /* functions of class SimView which implements glut callbacks in SimUI.cxx */
 
-#include <FL/glut.H>
-#include <FL/glu.h>
+#include GLUT_HEADER
+#include GLU_HEADER
 #include <string.h>
 #include <time.h> // for srand seeding and FPS calculation
+#include "FL/gl_draw.H"
 #include "ui/agv.h" // eye movement
 #include "ui/draw/DrawScene.h" // draw sim scene
 #include "SimConfig.h"

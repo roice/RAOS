@@ -24,20 +24,41 @@ set(CMAKE_BUILD_TYPE Debug)
 # ============= Don't touch the following ===========
 #====================================================
 project(${PRJ_NAME})
+#======== Color map ========
+if(NOT WIN32)
+  string(ASCII 27 Esc)
+  set(ColourReset "${Esc}[m")
+  set(ColourBold  "${Esc}[1m")
+  set(Red         "${Esc}[31m")
+  set(Green       "${Esc}[32m")
+  set(Yellow      "${Esc}[33m")
+  set(Blue        "${Esc}[34m")
+  set(Magenta     "${Esc}[35m")
+  set(Cyan        "${Esc}[36m")
+  set(White       "${Esc}[37m")
+  set(BoldRed     "${Esc}[1;31m")
+  set(BoldGreen   "${Esc}[1;32m")
+  set(BoldYellow  "${Esc}[1;33m")
+  set(BoldBlue    "${Esc}[1;34m")
+  set(BoldMagenta "${Esc}[1;35m")
+  set(BoldCyan    "${Esc}[1;36m")
+  set(BoldWhite   "${Esc}[1;37m")
+endif()
 #======== Detect which platform in use ========
 # if compile on Mac OSX, the "-framework Cocoa" flag should be added
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+if(APPLE)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-deprecated")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa")
-    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -framework Cocoa")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework GLUT")
+    set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -framework Cocoa -framework OpenGL -framework GLUT")
     # Modified by Roice, 20160308
     # As CUDA is used to compute helicopter wakes, the MacOSX platform will
-    #  no longer to be supported since March 8, 2016. Currently the RAOS
-    #  project is written on Linux, but it may be compiled on Windows as well
+    #  not have feature to compute helicopter wakes.
     message("Compile on APPLE MACOSX")
-    message(FATAL_ERROR "The RAOS project only support Linux and Windows OS with graphic cards.")
-elseif(UNIX)
-    message("Compile on UNIX")
+    message("${BoldRed}WARNING: Wake simulation feature will not supported.${ColourReset}") 
+elseif(UNIX AND NOT APPLE)
+    message("${BoldGreen}Compile on UNIX with full features.${ColourReset}")
+    set(RAOS_FEATURE_WAKES "enable")
+    add_definitions(-DRAOS_FEATURE_WAKES)
 endif()
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -45,24 +66,43 @@ endif()
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #---- External FLTK related settings ----
 # Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
-set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build")
+if(UNIX AND NOT APPLE) # MacOSX use brew fltk
+    set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build")
+endif()
 # print out paths in order to check if goes wrong
 message("Project Source Dir: \"${PROJECT_SOURCE_DIR}\"")
 message("Project Binary Dir: \"${PROJECT_BINARY_DIR}\"")
-message("FLTK_DIR (where the FLTKConfig.cmake file is): \"${FLTK_DIR}\"")
+if(UNIX AND NOT APPLE) # MacOSX use brew fltk
+    message("FLTK_DIR (where the FLTKConfig.cmake file is): \"${FLTK_DIR}\"")
+endif()
 # find the FLTK package
 # "NO_MODULE" tells CMake to search only for the FLTKConfig file, not using
 # the FindFLTK.cmake supplied with CMake, which doesn't work with this version
 # of FLTK
-find_package(FLTK REQUIRED NO_MODULE)
+if(UNIX AND NOT APPLE)
+    find_package(FLTK REQUIRED NO_MODULE)
+elseif(APPLE)
+    find_package(FLTK REQUIRED)
+endif()
 find_package(OpenGL REQUIRED)
 # this file is in the same folder as FLTKConfig.cmake file
-include(${FLTK_USE_FILE})
+if(UNIX AND NOT APPLE)
+    include(${FLTK_USE_FILE})
+endif()
+# gl.h and glu.h
+if(UNIX AND NOT APPLE)
+    add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
+elseif(APPLE)
+    #add_definitions(-DGL_HEADER=<OpenGL/gl.h> -DGLU_HEADER=<OpenGL/glu.h> -DGLUT_HEADER=<GLUT/glut.h>)
+    add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
+endif()
 
 #---- External CUDA related settings ----
-find_package(CUDA REQUIRED)
-# nvcc flags
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
+if(UNIX AND NOT APPLE)
+    find_package(CUDA REQUIRED)
+    # nvcc flags
+    set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
+endif()
 
 #---- External HDF5 related, for data recording
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
@@ -86,29 +126,52 @@ include_directories(${PROJECT_SOURCE_DIR}/3rdparty/ziggurat)
 #---- library files path settings ----
 # add library dir into lib path
 #   add fltk lib directory
-link_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build/lib)
+if(UNIX AND NOT APPLE)
+    link_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build/lib)
+endif()
 #   add blas and cblas lib dir
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/BLAS-3.6.0)
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/lib)
+#   libgfortran
+if(APPLE)
+    link_directories(/usr/local/lib/gcc/5/)
+endif()
 
 #---- start compiling ----
 set(LIB_UI_NAME ui)
 set(LIB_MODEL_NAME model) # models
 # make a library from quadrotor model files
-cuda_add_library(${LIB_MODEL_NAME} 
-    src/model/SimModel.cxx
-    src/model/plume.cxx
-    src/model/wake_rotor.cxx src/model/wake.cu
-    src/model/robot.cxx src/model/quadrotor.cxx
-    3rdparty/ziggurat/ziggurat.cpp)
+if(RAOS_FEATURE_WAKES)
+    cuda_add_library(${LIB_MODEL_NAME} 
+        src/model/SimModel.cxx
+        src/model/plume.cxx
+        src/model/wake_rotor.cxx src/model/wake.cu
+        src/model/robot.cxx src/model/quadrotor.cxx
+        3rdparty/ziggurat/ziggurat.cpp)
+else()
+    add_library(${LIB_MODEL_NAME} 
+        src/model/SimModel.cxx
+        src/model/plume.cxx
+        src/model/robot.cxx src/model/quadrotor.cxx
+        3rdparty/ziggurat/ziggurat.cpp)
+endif()
+
 # make a library from ui files
-add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
-    src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx 
-    src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
-    src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
-    src/ui/draw/draw_wake.cxx)
+if(RAOS_FEATURE_WAKES)
+    add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
+        src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx 
+        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
+        src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
+        src/ui/draw/draw_wake.cxx)
+else()
+    add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
+        src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx 
+        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
+        src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
+        )
+endif()
 # compile main file
-add_executable(${PRJ_NAME} src/SimMain.cxx src/SimLoop.cxx src/SimConfig.cxx src/SimRecord.cxx)
+add_executable(${PRJ_NAME} src/SimMain.cxx src/SimLoop.cxx src/SimConfig.cxx) #src/SimRecord.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 
 #---- start linking ----

@@ -9,7 +9,9 @@
 #include <string.h>
 #include "model/robot.h"
 #include "model/plume.h"
-#include "model/wake.h"
+#ifdef RAOS_FEATURE_WAKES
+    #include "model/wake.h"
+#endif
 #include "model/SimModel.h"
 #include "SimLoop.h"
 #include <math.h>
@@ -36,10 +38,12 @@ void SimModel_init(void)
     /* init plume */
     plume_init();
 
+#ifdef RAOS_FEATURE_WAKES
     /* init parallelization of rotor wakes computation */
     WakesInit(&robots);
     /* init para... of wakes-induced velocity at puffs */
     WakesIndVelatPlumePuffsInit(&robots, plume_get_fila_state());
+#endif
 
     /* init timing */
     sim_state.time = 0.0;
@@ -54,12 +58,13 @@ void SimModel_update(void) {
     /* update robot */
     for (int i = 0; i < robots.size(); i++)
         robots.at(i)->update();
-
+#ifdef RAOS_FEATURE_WAKES
     /* update rotor wakes */
     WakesUpdate(&robots, "Euler", &sim_state);
 
     /* update plume */
     WakesIndVelatPlumePuffsUpdate(&robots, plume_get_fila_state());
+#endif
 
 /* debug */
 /*
@@ -96,8 +101,10 @@ printf("v_z = %f, size_m = %d\n", plume->back().vel[2], robots.at(0)->wakes.at(0
 
 void SimModel_finish(void)
 {
+#ifdef RAOS_FEATURE_WAKES
     // free memory of GPU computation
     WakesFinish();
+#endif
 }
 
 // get the pointer to the robots

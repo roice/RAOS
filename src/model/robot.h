@@ -9,7 +9,11 @@
 #ifndef ROBOT_H
 #define ROBOT_H
 
-#include "wake_rotor.h"
+#include <vector>
+
+#ifdef RAOS_FEATURE_WAKES
+    #include "wake_rotor.h"
+#endif
 
 enum RobotType{helicopter, quadrotor};
 
@@ -19,8 +23,10 @@ typedef struct {
     /* Robot type */
     enum RobotType type; // robot type
     void* frame; // robot frame
+#ifdef RAOS_FEATURE_WAKES
     /* rotor wake switch */
     enum FuncSwitch wake; // indicating whether to calculate wake or not
+#endif
 }RobotConfig_t;
 
 typedef struct {    
@@ -36,8 +42,10 @@ class Robot {
         Robot(const char* robot_type_name); // constructor
         void init(void);
         void update(void);
-        
+
+#ifdef RAOS_FEATURE_WAKES
         std::vector<RotorWake*> wakes; // pointer of array containing pointers of RotorWake instances describing wakes of rotors (if has)
+#endif
         RobotState_t state; // robot state
         RobotConfig_t config; // robot configs
         std::vector<RobotState_t> record;

@@ -10,8 +10,8 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-02-26 create this file
  */
-#include <FL/gl.h>
-#include <FL/glut.H>
+#include GL_HEADER
+#include GLUT_HEADER
 #include <vector>
 #include "model/plume.h"
 #include "ui/draw/materials.h"

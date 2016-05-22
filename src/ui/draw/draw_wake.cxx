@@ -10,7 +10,7 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-03-07 create this file
  */
-#include <FL/gl.h>
+#include GL_HEADER
 #include <vector>
 #include "model/robot.h"
 #include <stdio.h>

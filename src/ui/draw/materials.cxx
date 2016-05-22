@@ -7,7 +7,7 @@
  * Date: 2016-02-24 create this file
  */
 
-#include <FL/gl.h>
+#include GL_HEADER
 #include "ui/draw/materials.h"
 
 /* material attribs */

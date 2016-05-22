@@ -22,8 +22,8 @@
 #include <FL/Fl_Value_Slider.H>
 /* OpenGL */
 #include <FL/Fl_Gl_Window.H>
-#include <FL/gl.h>
-#include <FL/glut.H>
+#include GL_HEADER
+#include GLUT_HEADER
 /* RAOS */
 #include "ui/SimUI.h"
 #include "ui/icons/icons.h" // pixmap icons used in Tool bar
@@ -267,7 +267,7 @@ void ToolBar::cb_button_stop(Fl_Widget *w, void *data)
     widgets->pause->clear();
 
     /* Save data */
-    SimSaveData();
+    //SimSaveData();
 }
 
 void ToolBar::cb_button_config(Fl_Widget *w, void *data)

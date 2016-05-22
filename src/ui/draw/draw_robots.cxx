@@ -11,7 +11,7 @@
  * Date: 2016-03-09 create this file
  */
 
-#include <FL/gl.h>
+#include GL_HEADER
 #include <vector>
 #include "model/robot.h"
 #include "model/quadrotor.h"

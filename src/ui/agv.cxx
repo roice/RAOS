@@ -12,22 +12,21 @@
  * http://www.cs.hmc.edu/people/pwinston
  */
 
-#include <config.h>
+//#include <config.h>
 
-#if HAVE_GL && HAVE_GL_GLU_H
-#  include <FL/glut.H>
-#  include <FL/glu.h>
+#include GLUT_HEADER
+#include GLU_HEADER
 
-#  include <stdio.h>
-#  include <stdlib.h>
-#  include <math.h>
-#  include <sys/types.h>
-#  include <time.h>
-#  if !defined(WIN32) && !defined(__EMX__)
-#    include <sys/time.h>
-#  endif // !WIN32 && !__EMX__
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include <sys/types.h>
+#include <time.h>
+#if !defined(WIN32) && !defined(__EMX__)
+    #include <sys/time.h>
+#endif // !WIN32 && !__EMX__
 
-#  include "ui/agv.h"
+#include "ui/agv.h"
 
 /* Some <math.h> files do not define M_PI... */
 #ifndef M_PI
@@ -529,5 +528,3 @@ void agvMakeAxesList(int displaylistnum)
   glEndList();  
 }
 
-
-#endif // HAVE_GL && HAVE_GL_GLU_H

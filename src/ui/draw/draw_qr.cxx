@@ -14,7 +14,7 @@
 #include <stdio.h>
 
 #include <math.h>
-#include <FL/gl.h>
+#include GL_HEADER
 #include "ui/draw/materials.h" // use material lists
 #include "model/robot.h"
 #include "model/quadrotor.h"
@@ -236,7 +236,7 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
 #endif
 
     /* "led" blinks, actually one propeller blinks */    
-	if (state->leds && 0x0001 && !shadow) 
+	if (state->leds & 0x0001 && !shadow) 
     {// turn on led (actually one motor)
         glDisable(GL_LIGHTING);
         glColor3f(1.0, 0.0, 0.0); /* red */

@@ -9,13 +9,15 @@
  * Date: 2016-02-23 create this file
  */
 
-#include <FL/gl.h>
+#include GL_HEADER
 
 #include "model/SimModel.h"
 #include "ui/draw/draw_robots.h" // robots visualization
 #include "ui/draw/draw_arena.h" // arena visualization
 #include "ui/draw/draw_plume.h" // plume visual
-#include "ui/draw/draw_wake.h" // wake visual
+#ifdef RAOS_FEATURE_WAKES
+    #include "ui/draw/draw_wake.h" // wake visual
+#endif
 #include "ui/draw/materials.h" // create material lists
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
@@ -58,8 +60,10 @@ void DrawScene(void)
     /* draw quadrotor */
     draw_robots(SimModel_get_robots());
 
+#ifdef RAOS_FEATURE_WAKES
     /* draw rotor wakes */
     draw_wake(SimModel_get_robots());
+#endif
 
     /* draw plume */
     draw_plume();

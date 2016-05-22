@@ -9,8 +9,8 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-02-24 create this file
  */
-#include <FL/gl.h>
-#include <FL/glu.h>
+#include GL_HEADER
+#include GLU_HEADER
 #include <math.h> // floor()
 #include "ui/draw/draw_arena.h"
 #include "ui/draw/materials.h" // use material lists

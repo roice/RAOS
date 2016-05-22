@@ -6,18 +6,17 @@
  *       2016-02-01 create this file (RAOS)
  */
 
-#include <config.h>
-#if !HAVE_GL || !HAVE_GL_GLU_H
-#include <FL/Fl.H>
-#include <FL/fl_message.H>
-int main(int, char**) {
-  fl_alert("This demo does not work without GL and GLU");
-  return 1;
-}
-#else
-// end of added block
+//#include <config.h>
+#ifndef __APPLE__
+    #if !HAVE_GL || !HAVE_GL_GLU_H
+        #define ERROR_NO_GL_GLU_FOUND
+    #endif
+#endif
 
 #include "FL/Fl.H"
+#ifdef ERROR_NO_GL_GLU_FOUND
+    #include <FL/fl_message.H>
+#endif
 #include "ui/SimUI.h" // control panel and GL view
 #include "model/SimModel.h" // models
 #include "SimConfig.h" // settings
@@ -28,6 +27,7 @@ int main(int, char**) {
 
 int main(int argc, char **argv) 
 {
+#ifndef ERROR_NO_GL_GLU_FOUND
     /* initialize sim settings */
     SimConfig_restore();
 
@@ -46,8 +46,10 @@ int main(int argc, char **argv)
     // delete events, free memory...
     SimModel_finish();
     return 0;
-}
-
+#else
+    fl_alert("This demo does not work without GL and GLU");
+    return 1;
 #endif
+}
 
 /* End of SimMain.cxx */
