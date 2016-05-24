@@ -6,13 +6,13 @@
 #!/bin/sh
 
 # Get platform type
-if [ "$(uname)" == "Darwin" ]; then
+if [ "$(uname)" = "Darwin" ]; then
     # Do something under Mac OS X platform
     SYSTEM="APPLE"
-elif [ "$(expr substr $(uname -s) 1 5)" == "Linux" ]; then
+elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
     # Do something under GNU/Linux platform
     SYSTEM="LINUX"
-elif [ "$(expr substr $(uname -s) 1 10)" == "MINGW32_NT" ]; then
+elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
     # Do something under Windows NT platform
     SYSTEM="WIN32"
 fi
@@ -24,7 +24,7 @@ sleep 1
 
 ##======== Compile 3rd Party softwares ========
 echo "Start Compiling 3d party soft ..."
-if [ ${SYSTEM} == "LINUX" ]; then
+if [ ${SYSTEM} = "LINUX" ]; then
     # Compile fltk
     echo "Start Compiling FLTK..."
     sleep 1

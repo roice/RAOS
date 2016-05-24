@@ -1,8 +1,20 @@
+#!/bin/sh
+
 ####=================================
 #### Uninstall all build files
 ####=================================
 
-#!/bin/sh
+# Get platform type
+if [ "$(uname)" = "Darwin" ]; then
+    # Do something under Mac OS X platform
+    SYSTEM="APPLE"
+elif [ "$(expr substr $(uname -s) 1 5)" = "Linux" ]; then
+    # Do something under GNU/Linux platform
+    SYSTEM="LINUX"
+elif [ "$(expr substr $(uname -s) 1 10)" = "MINGW32_NT" ]; then
+    # Do something under Windows NT platform
+    SYSTEM="WIN32"
+fi
 
 # Get project top directory abs path
 prjtop=$(cd "$(dirname "$0")"; pwd)
@@ -11,10 +23,12 @@ sleep 2
 
 echo "Start cleaning ..."
 sleep 1
-# clear 3rd party software builds
-echo "Cleaning FLTK..."
-cd $prjtop/3rdparty
-rm -rf fltk-1.3.3/build
+if [ ${SYSTEM} = "LINUX" ]; then
+    # clear 3rd party software builds
+    echo "Cleaning FLTK..."
+    cd $prjtop/3rdparty
+    rm -rf fltk-1.3.3/build
+fi
 
 # clear blas
 echo "Cleaning BLAS..."
