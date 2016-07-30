@@ -171,7 +171,7 @@ else()
         )
 endif()
 # compile main file
-add_executable(${PRJ_NAME} src/SimMain.cxx src/SimLoop.cxx src/SimConfig.cxx) #src/SimRecord.cxx)
+add_executable(${PRJ_NAME} src/SimMain.cxx src/SimLoop.cxx src/SimConfig.cxx src/SimRecord.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 
 #---- start linking ----

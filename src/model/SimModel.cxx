@@ -29,7 +29,7 @@ void SimModel_init(void)
 {
     /* create & init robot */
     Robot* new_robot = new Robot("quadrotor");
-    new_robot->state.pos[0] = 4.5;
+    new_robot->state.pos[0] = 0.5;
     new_robot->state.pos[1] = 4.5;
     new_robot->state.pos[2] = 2.0;
     new_robot->init();

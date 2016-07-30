@@ -14,7 +14,7 @@
 
 GasDistMapping::GasDistMapping(void)
 {
-    float z = 2.4; // m
+    float z = 1.8; // m
 
     for (int i = 0; i < 20; i++) {
         zigzag_waypoints[i][2] = z;
@@ -30,12 +30,12 @@ GasDistMapping::GasDistMapping(void)
             zigzag_waypoints[i*2+j][0] = 4.5-i*1.0;
 
     // init waypoint indexing
-    next_waypoint_index = 0;
+    next_waypoint_index = 8;
 }
 
 void GasDistMapping::waypoint_update(Robot* robot, SimState_t* sim_state)
 {
-    float vel_nrm = 1.0; // 1 m/s
+    float vel_nrm = 0.1; // 1 m/s
 
     // get robot's position
     float* pos = &(robot->state.pos[0]);

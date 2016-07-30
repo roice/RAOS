@@ -267,7 +267,7 @@ void ToolBar::cb_button_stop(Fl_Widget *w, void *data)
     widgets->pause->clear();
 
     /* Save data */
-    //SimSaveData();
+    SimSaveData();
 }
 
 void ToolBar::cb_button_config(Fl_Widget *w, void *data)

@@ -95,13 +95,23 @@ void RotorWake::maintain(const char* marker_maintain_type)
                 new_marker.r = sqrt(new_marker.r_init*new_marker.r_init + 4.0f*1.25643f*4.0*0.01834f*j*(config.dpsi*PI/180.0)/rotor_state.Omega);
                 // push to wake state array
                 wake_state[i]->push_back(new_marker);
+#if defined(WAKE_IGE)
+                new_marker.pos[2] = -new_marker.pos[2];
+                new_marker.Gamma = -new_marker.Gamma;
+                wake_state[i+rotor_state.frame.n_blades]->push_back(new_marker);
+                new_marker.Gamma = -new_marker.Gamma;
+#endif
             }
         }
         /* remove a turn of markers */
         for (int i = 0; i < rotor_state.frame.n_blades; i++)
             if (wake_state[i]->size() > max_markers)
-                for (int j = 0; j < markers_per_turn; j++)
+                for (int j = 0; j < markers_per_turn; j++) {
                     wake_state[i]->erase(wake_state[i]->begin());
+#if defined(WAKE_IGE)
+                    wake_state[i+rotor_state.frame.n_blades]->erase(wake_state[i+rotor_state.frame.n_blades]->begin());
+#endif
+                }
     }
 }
 

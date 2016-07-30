@@ -87,6 +87,7 @@ class FilaModel
             for (int i = 0; i < state.size(); i++) // for each fila
             {
                 state.at(i).r += 0.0001;
+                //state.at(i).r += 0.00001;
             }
         /* Step 3: fila maintainance */
             fila_num_need_release += config.pps*sim_state->dt;
@@ -126,6 +127,7 @@ class FilaModel
             new_fila.vel[1] = 0;
             new_fila.vel[2] = 0;
             new_fila.r = 0.001;
+            //new_fila.r = 0.01;
             state.push_back(new_fila);
         }
 };
