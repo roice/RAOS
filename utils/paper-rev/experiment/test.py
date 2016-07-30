@@ -27,7 +27,7 @@ pos_17_under_AOE = h5py.File('Record_2016-07-08_15-38-16.h5', 'r+')['enu_of_robo
 fig = plt.figure(figsize=(12,10))
 ax = fig.add_subplot(111)
 
-ax.plot(rd_17_under_AOE)
-ax.plot(pos_17_under_AOE)
+ax.plot(rd_13_under_AOE)
+ax.plot(pos_13_under_AOE)
 
 plt.show()
