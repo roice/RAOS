@@ -9,6 +9,8 @@
 
 void SimSaveData(void)
 {
+#ifdef RAOS_FEATURE_WAKES
+
     hid_t file_id, dataset_id, dataspace_id;
     herr_t status;
     hsize_t data_dims[2];
@@ -107,4 +109,6 @@ void SimSaveData(void)
 
     /* Terminate access to the file. */
     status = H5Fclose(file_id);
+
+#endif
 }

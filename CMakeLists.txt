@@ -134,7 +134,7 @@ link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/BLAS-3.6.0)
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/lib)
 #   libgfortran
 if(APPLE)
-    link_directories(/usr/local/lib/gcc/5/)
+    link_directories(/usr/local/lib/gcc/6/)
 endif()
 
 #---- start compiling ----
