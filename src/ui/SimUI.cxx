@@ -11,6 +11,7 @@
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Choice.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Light_Button.H>
 #include <FL/Fl_Pixmap.H>
@@ -230,7 +231,216 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
     show();
 }
 
-/*------- ToolBar -------*/
+/* =================================================
+ * ==== Robot panel (state viewer & controller) ====
+ * =================================================*/
+struct RobotPanel_Widgets { // for parameter saving
+    Fl_Choice*      robot_to_display_sensor_reading; // choose which robot's reading to display
+    WavePlot*      robot_sensor_reading; // reading of sensors
+};
+struct RobotPanel_handles {
+};
+class RobotPanel : public Fl_Window
+{
+public:
+    RobotPanel(int xpos, int ypos, int width, int height, const char* title);
+    static Fl_Button*  robot_button; // contain the handle of the button which open this panel in its callback
+    // widgets
+    struct RobotPanel_Widgets ws;
+    static struct RobotPanel_handles hs;
+private:
+    // callback funcs
+    static void cb_close(Fl_Widget*, void*);
+    static void cb_robot_rc_button(Fl_Widget*, void*);
+    // function to save current value of widgets to runtime configs
+    static void save_value_to_configs(RobotPanel_Widgets*);
+    // function to get runtime configs to set value of widgets
+    static void get_value_from_configs(RobotPanel_Widgets*);
+};
+Fl_Button* RobotPanel::robot_button = NULL;
+struct RobotPanel_handles RobotPanel::hs = {NULL};
+void RobotPanel::cb_close(Fl_Widget* w, void* data) {
+    if (Fl::event() == FL_CLOSE) {
+        ((Fl_Window*)w)->hide();
+        // and release the robot button in toolbar
+        if (robot_button != NULL)
+            robot_button->value(0);
+    }
+}
+void RobotPanel::cb_robot_rc_button(Fl_Widget* w, void* data) {
+    if (hs.remoter_panel != NULL) {
+        if (hs.remoter_panel->shown()) {
+            if (!((Fl_Button*)w)->value()) {
+                hs.remoter_panel->hide();
+            }
+        }
+        else {
+            if (((Fl_Button*)w)->value()) {
+                hs.remoter_panel->show();
+            }
+        }
+    }
+    else // first press this button
+    {// create config dialog
+        if (((Fl_Button*)w)->value()) // if pressed
+        {
+            Fl_Window* window = w->window(); // find the nearest parent window of this button, i.e., RobotPanel
+            hs.remoter_panel = new RemoterPanel(window->x()+window->w(), window->y(), 
+                300, window->h(), "RC Control");
+            hs.remoter_panel->remoter_button = (Fl_Button*)w;
+        }
+    }
+}
+void RobotPanel::get_value_from_configs(RobotPanel_Widgets* ws) {
+    GSRAO_Config_t* configs = GSRAO_Config_get_configs(); // get runtime configs
+    
+    // check whether to open remoter panel or not
+    if (configs->system.remoter_panel_opened) {
+        // open remoter panel
+        Fl_Window* window = ws->robot_rc_button->window();
+        hs.remoter_panel = new RemoterPanel(window->x()+window->w(), window->y(), 
+                300, window->h(), "RC Control");
+        hs.remoter_panel->remoter_button = ws->robot_rc_button;
+        ws->robot_rc_button->value(1);
+    }
+}
+RobotPanel::RobotPanel(int xpos, int ypos, int width, int height, 
+        const char* title=0):Fl_Window(xpos,ypos,width,height,title)
+{
+    GSRAO_Config_t* configs = GSRAO_Config_get_configs(); // get runtime configs
+
+    // add event handle to dialog window
+    callback(cb_close, (void*)&ws);   
+    // begin adding children
+    begin();
+    int t_x = 5, t_y = 5, t_w = w()-10, t_h = h()-10;
+    //  robot link state, Note: only check data network (data receiving)
+    Fl_Box *link = new Fl_Box(t_x, t_y, 220, 160, "Robot State");
+        link->box(FL_PLASTIC_UP_FRAME);
+        link->labelsize(15);
+        link->labelfont(FL_COURIER_BOLD_ITALIC);
+        link->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+    {
+        // LED indicating data link state
+        new Fl_Box(t_x, t_y+20, 80, 25, "Data Link");
+        const char* robot_name[] = {"#1", "#2", "#3", "#4"};
+        for (char i = 0; i < 4; i++) // 4 robots max
+        {
+            ws.robot_link_state[i] = new Fl_LED_Button(t_x+30, t_y+40+30*i, 30, 30, robot_name[i]);
+            ws.robot_link_state[i]->selection_color(FL_DARK_GREEN);
+            ws.robot_link_state[i]->labelsize(13);
+            ws.robot_link_state[i]->align(Fl_Align(FL_ALIGN_LEFT)); 
+        }
+        // ARM/DISARM info
+        new Fl_Box(t_x+90, t_y+20, 60, 25, "ARMING");
+        for (char i = 0; i < 4; i++) // 4 robots max
+        {
+            ws.robot_arm_state[i] = new Fl_Box(t_x+90, t_y+40+30*i, 60, 25, "DISARM");
+            ws.robot_arm_state[i]->labelcolor(FL_RED);
+        }
+        // Battery status
+        new Fl_Box(t_x+160, t_y+20, 60, 25, "Battery");
+        for (char i = 0; i < 4; i++) // 4 robots max
+        {
+            ws.robot_bat_state[i] = new Fl_Box(t_x+150, t_y+40+30*i, 60, 25, "0 V");
+            ws.robot_bat_state[i]->labelcolor(FL_RED);
+        }
+    }
+    //  robot remote control
+    ws.robot_rc_button = new Fl_Button(t_x, t_y+40+30*4, 34, 34);
+    Fl_Pixmap *icon_rc = new Fl_Pixmap(pixmap_icon_rc);
+    ws.robot_rc_button->image(icon_rc);
+    ws.robot_rc_button->tooltip("Robot remote controller, please use with care.");
+    ws.robot_rc_button->type(FL_TOGGLE_BUTTON);
+    ws.robot_rc_button->callback(cb_robot_rc_button);
+    new Fl_Box(t_x+40, t_y+40+30*4, 120, 30, "");
+
+    // robot choice to display sensor reading
+    ws.robot_to_display_sensor_reading = new Fl_Choice(t_x+40, t_y+40+30*4+2, 180, 30);
+    ws.robot_to_display_sensor_reading->add("Show sensors robot 1");
+    ws.robot_to_display_sensor_reading->add("Show sensors robot 2");
+    ws.robot_to_display_sensor_reading->add("Show sensors robot 3");
+    ws.robot_to_display_sensor_reading->add("Show sensors robot 4");
+    ws.robot_to_display_sensor_reading->value(0);
+
+    // sensor reading plot
+    Fl_Box* sr_box = new Fl_Box(t_x+225, t_y, 465, 190, "Sensor reading");
+    sr_box->box(FL_PLASTIC_UP_FRAME);
+    sr_box->labelsize(15);
+    sr_box->labelfont(FL_COURIER_BOLD_ITALIC);
+    sr_box->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+    {
+        Fl_Scroll* scroll = new Fl_Scroll(t_x+230, t_y+25, 455, 165);
+        ws.robot_sensor_reading = new WavePlot(t_x+230, t_y+25, 455*10, 140, ""); // *10 means 10 min length of data 
+        scroll->end();
+    }
+
+    end();
+
+    // set values from configs
+    get_value_from_configs(&ws);
+
+    show();
+}
+
+/* ================================
+ * ========= Result Panel =========
+ * ================================*/
+struct ResultPanel_Widgets { // for parameter saving
+};
+struct ResultPanel_handles {
+};
+class ResultPanel : public Fl_Window
+{
+public:
+    ResultPanel(int xpos, int ypos, int width, int height, const char* title);
+    static Fl_Button*  result_button; // contain the handle of the button which open this panel in its callback
+    // widgets
+    struct ResultPanel_Widgets ws;
+    static struct ResultPanel_handles hs;
+private:
+    // callback funcs
+    static void cb_close(Fl_Widget*, void*);
+    // function to save current value of widgets to runtime configs
+    static void save_value_to_configs(ResultPanel_Widgets*);
+    // function to get runtime configs to set value of widgets
+    static void get_value_from_configs(ResultPanel_Widgets*);
+};
+Fl_Button* ResultPanel::result_button = NULL;
+//struct ResultPanel_handles ResultPanel::hs = {NULL};
+void ResultPanel::cb_close(Fl_Widget* w, void* data) {
+    if (Fl::event() == FL_CLOSE) {
+        ((Fl_Window*)w)->hide();
+        // and release the result button in toolbar
+        if (result_button != NULL)
+            result_button->value(0);
+    }
+}
+void ResultPanel::get_value_from_configs(ResultPanel_Widgets* ws) {
+    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+}
+ResultPanel::ResultPanel(int xpos, int ypos, int width, int height, 
+        const char* title=0):Fl_Window(xpos,ypos,width,height,title)
+{
+    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+
+    // add event handle to dialog window
+    callback(cb_close, (void*)&ws);   
+    // begin adding children
+    begin();
+    int t_x = 5, t_y = 5, t_w = w()-10, t_h = h()-10;
+    
+    end();
+
+    // set values from configs
+    get_value_from_configs(&ws);
+
+    show();
+}
+
+/* ================================
+ * ========= ToolBar ==============
+ * ================================*/
 struct ToolBar_Widgets
 {
     Fl_Button* start; // start button
@@ -238,33 +448,124 @@ struct ToolBar_Widgets
     Fl_Button* stop; // stop button
     Fl_Button* config; // config button
     Fl_Light_Button* record; // record button
+    Fl_Button*  robot;  // robot state&control button
+    Fl_Button*  result; // result display button
+    Fl_Box*     msg_zone; // message zone
+};
+struct ToolBar_Handles // handles of dialogs/panels opened by corresponding buttons
+{
+    ConfigDlg* config_dlg; // handle of config dialog opened by config button
+    RobotPanel* robot_panel; // handle of robot panel opened by robot button
+    ResultPanel* result_panel; // handle of result panel opened by result button
 };
 class ToolBar : public Fl_Group
 {
 public:
     ToolBar(int Xpos, int Ypos, int Width, int Height, void *win);
-    struct ToolBar_Widgets tb_widgets;
+    struct ToolBar_Widgets ws;
+    static struct ToolBar_Handles hs;
+    void restore_from_configs(ToolBar_Widgets* void*);
+private:
     static void cb_button_start(Fl_Widget*, void*);
     static void cb_button_pause(Fl_Widget*, void*);
     static void cb_button_stop(Fl_Widget*, void*);
     static void cb_button_config(Fl_Widget*, void*);
+    static void cb_button_robot(Fl_Widget*, void*);
+    static void cb_button_result(Fl_Widget*, void*);
 };
+struct ToolBar_Handles ToolBar::hs = {NULL, NULL, NULL};
+
+/* ------- Repeated Tasks -------- */
+static void cb_repeated_tasks_10hz(void* data)
+{
+    ToolBar_Handles* hs = (ToolBar_Handles*)data;
+
+    // draw sensor reading
+    if (hs->robot_panel != NULL && hs->robot_panel->shown())
+    {
+        hs->robot_panel->ws.robot_sensor_reading->redraw();
+    }
+
+    // reload
+    Fl::repeat_timeout(0.1, cb_repeated_tasks_10hz, data);
+}
 
 void ToolBar::cb_button_start(Fl_Widget *w, void *data)
 {
-    fl_alert("Start Button pressed!");
+    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+
+    ToolBar_Widgets* widgets = (ToolBar_Widgets*)data;
+
+    // if pause button is pressed, meaning that the initialization has been carried out, so just restore and continue
+    if (widgets->pause->value()) {
+        // release pause button
+        widgets->pause->activate(); widgets->pause->clear();
+        // continue running
+        
+    }
+    else {
+    // if pause button is not pressed, then need check start button state
+        if (((Fl_Button*)w)->value()) // if start button is pressed down
+        {
+            // lock config button
+            widgets->config->deactivate();
+            widgets->msg_zone->label(""); // clear message zone
+            // clear robot record
+            std::vector<Robot_Record_t>* robot_rec = robot_get_record();
+            for (int i = 0; i < 4; i++) // 4 robots max
+                robot_rec[i].clear();
+        
+            // Init RAO task
+            //if (!method_start(METHOD_HOVER_MEASURE)) // start hover measure task
+            if (!method_start(METHOD_BACK_FORTH_MEASURE)) // start back-forth measure task
+            {
+                widgets->msg_zone->label("Method start failed!");
+                widgets->msg_zone->labelcolor(FL_RED);
+                ((Fl_Button*)w)->value(0);
+                // TODO: shutdown robots
+
+                return;
+            }
+            // add timers for repeated tasks (such as data display)
+            Fl::add_timeout(0.1, cb_repeated_tasks_10hz, (void*)&hs);
+        }
+        else {
+            // user is trying to release start button when pause is not pressed
+            ((Fl_Button*)w)->value(1);
+        }
+    }
 }
 
 void ToolBar::cb_button_pause(Fl_Widget *w, void *data)
 {
-    fl_alert("Pause Button pressed!");
+    ToolBar_Widgets* widgets = (ToolBar_Widgets*)data;
+    // if start button pressed, release it, and pause experiment
+    if (widgets->start->value()) {
+        widgets->start->value(0); // release start button
+        widgets->pause->deactivate(); // make pause button unclickable
+        // pause experiment...
+
+    }
+    else {
+    // if start button not pressed, pause button will not toggle and no code action will be took
+        widgets->pause->clear();
+    }
 }
 
 void ToolBar::cb_button_stop(Fl_Widget *w, void *data)
 {
+    // release start and pause buttons
     struct ToolBar_Widgets *widgets = (struct ToolBar_Widgets*)data;
     widgets->start->clear();
-    widgets->pause->clear();
+    widgets->pause->activate(); widgets->pause->clear();
+
+    // TODO: shutdown RAO tasks and robots
+    Fl::remove_timeout(cb_repeated_tasks_10hz); // remove timeout callback for repeated tasks
+
+    // clear message zone
+    widgets->msg_zone->label("");
+    // unlock config button
+    widgets->config->activate();
 
     /* Save data */
     SimSaveData();
@@ -272,10 +573,90 @@ void ToolBar::cb_button_stop(Fl_Widget *w, void *data)
 
 void ToolBar::cb_button_config(Fl_Widget *w, void *data)
 {
-    // Open Configuration dialog
-    Fl_Window* window=(Fl_Window*)data;
-    ConfigDlg *config = new ConfigDlg(window->x()+20, window->y()+20, 
+    if (hs.config_dlg != NULL)
+    {
+        if (hs.config_dlg->shown()) // if shown, do not open again
+        {}
+        else
+        {
+            hs.config_dlg->show(); 
+        }
+    }
+    else // first press this button
+    {// create config dialog
+        Fl_Window* window=(Fl_Window*)data;
+        hs.config_dlg = new ConfigDlg(window->x()+20, window->y()+20, 
             400, 400, "Settings");
+    }
+}
+void ToolBar::cb_button_robot(Fl_Widget *w, void *data)
+{
+    if (hs.robot_panel != NULL)
+    {
+        if (hs.robot_panel->shown()) { // if shown, do not open again
+            if (!((Fl_Button*)w)->value())
+                hs.robot_panel->hide();
+        }
+        else {
+            if (((Fl_Button*)w)->value())
+                hs.robot_panel->show();
+        }
+    }
+    else // first press this button
+    {// create config dialog
+        if (((Fl_Button*)w)->value()) // if pressed
+        {
+            Fl_Window* window=(Fl_Window*)data;
+            hs.robot_panel = new RobotPanel(window->x(), window->y()+window->h()+40, 
+                window->w(), 200, "Robot Panel");
+            hs.robot_panel->robot_button = (Fl_Button*)w;
+        }
+    }
+}
+void ToolBar::cb_button_result(Fl_Widget *w, void *data)
+{
+    if (hs.result_panel != NULL)
+    {
+        if (hs.result_panel->shown()) { // if shown, do not open again
+            if (!((Fl_Button*)w)->value())
+                hs.result_panel->hide();
+        }
+        else {
+            if (((Fl_Button*)w)->value())
+                hs.result_panel->show();
+        }
+    }
+    else // first press this button
+    {// create config dialog
+        if (((Fl_Button*)w)->value()) // if pressed
+        {
+            Fl_Window* window=(Fl_Window*)data;
+            hs.result_panel = new ResultPanel(window->x()+window->w(), window->y(), 
+                200, window->h(), "Result Panel");
+            hs.result_panel->result_button = (Fl_Button*)w;
+        }
+    }
+}
+void ToolBar::restore_from_configs(ToolBar_Widgets* ws, void *data)
+{
+    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+
+    // check whether to open robot panel or not
+    if (configs->system.robot_panel_opened) {
+        Fl_Window* window = (Fl_Window*)data;
+        hs.robot_panel = new RobotPanel(window->x(), window->y()+window->h()+40, 
+            window->w(), 200, "Robot Panel");
+        hs.robot_panel->robot_button = ws->robot;
+        ws->robot->value(1);
+    }
+    // check whether to open result panel or not
+    if (configs->system.result_panel_opened) {
+        Fl_Window* window = (Fl_Window*)data;
+        hs.result_panel = new ResultPanel(window->x()+window->w(), window->y(), 
+                200, window->h(), "Result Panel");
+        hs.result_panel->result_button = ws->result;
+        ws->result->value(1);
+    }
 }
 
 ToolBar::ToolBar(int Xpos, int Ypos, int Width, int Height, void *win) :
@@ -292,6 +673,11 @@ Fl_Group(Xpos, Ypos, Width, Height)
     tb_widgets.stop = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     tb_widgets.config = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     tb_widgets.record = new Fl_Light_Button(Xpos, Ypos, Width+22, Height); Xpos += Width+22+5;
+    ws.robot = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
+    ws.result = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
+    ws.msg_zone = new Fl_Box(FL_DOWN_BOX, Xpos, Ypos, bar->w()-Xpos, Height, "");
+    ws.msg_zone->align(Fl_Align(FL_ALIGN_CENTER|FL_ALIGN_INSIDE));
+    resizable(ws.msg_zone); // protect buttons from resizing
     Fl_Box *bar_rest = new Fl_Box(FL_DOWN_BOX, Xpos, Ypos, bar->w()-Xpos, Height, "");
     resizable(bar_rest); // protect buttons from resizing
     // icons
@@ -326,35 +712,77 @@ Fl_Group(Xpos, Ypos, Width, Height)
     end();
 }
 
+/* =========================================
+ * ================= UI ====================
+ * =========================================*/
+void SimUI::cb_close(Fl_Widget* w, void* data) { 
+    // close RAOS
+    if (Fl::event() == FL_CLOSE) {
+        // TODO: shutdown RAO tasks and robots
+        Fl::remove_timeout(cb_repeated_tasks_10hz); // remove timeout callback for repeated tasks
+
+        // save open/close states of other sub-panels to configs
+        SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+        SimUI_Widgets* ws = (SimUI_Widgets*)data;
+        if (((ToolBar*)ws->toolbar)->hs.robot_panel != NULL) { // robot panel
+            if (((ToolBar*)ws->toolbar)->hs.robot_panel->shown())
+                configs->system.robot_panel_opened = true;
+            else
+                configs->system.robot_panel_opened = false;
+        }
+        if (((ToolBar*)ws->toolbar)->hs.result_panel != NULL) { // result panel
+            if (((ToolBar*)ws->toolbar)->hs.result_panel->shown())
+                configs->system.result_panel_opened = true;
+            else
+                configs->system.result_panel_opened = false;
+        }
+
+        // close other panels
+        if (((ToolBar*)ws->toolbar)->hs.config_dlg != NULL && ((ToolBar*)ws->toolbar)->hs.config_dlg->shown()) // close config dialog
+            ((ToolBar*)ws->toolbar)->hs.config_dlg->hide();
+        if (((ToolBar*)ws->toolbar)->hs.robot_panel != NULL && ((ToolBar*)ws->toolbar)->hs.robot_panel->shown()) // close robot panel
+            ((ToolBar*)ws->toolbar)->hs.robot_panel->hide();
+        if (((ToolBar*)ws->toolbar)->hs.result_panel != NULL && ((ToolBar*)ws->toolbar)->hs.result_panel->shown()) // close result panel
+            ((ToolBar*)ws->toolbar)->hs.result_panel->hide();
+
+        // close main window
+        ((Fl_Window*)w)->hide();
+    }
+}
 
 /*------- Creation function of User Interface  -------*/
 SimUI::SimUI(int width, int height, const char* title=0)
 {
     /* Main Window, control panel */
     Fl_Double_Window *panel = new Fl_Double_Window(width, height, title);
-    panel->resizable(panel);
-   
+    panel->resizable(panel); 
+
+    /* Add simulator view */
+    panel->show(); // glut will die unless parent window visible
+    /* begin adding children */
+    panel->begin();
     // Add tool bar, it's width is equal to panel's
     ToolBar *tool = new ToolBar(0, 0, width, 34, (void*)panel);
+    ws.toolbar = tool;
     tool->clear_visible_focus(); //just use mouse, no TABs
     // protect buttons from resizing
     Fl_Box *r = new Fl_Box(FL_NO_BOX, width, tool->h(), 0, height-tool->h(), "right_border");
     r->hide();
     panel->resizable(r);
-
-    /* Add simulator view */
-    panel->show(); // glut will die unless parent window visible
-    /* begin adding children */
-    panel->begin(); 
+    /* Add RAO view */
     glutInitWindowSize(width-10, height-tool->h()-10);// be consistent with SimView_init
     glutInitWindowPosition(panel->x()+5, tool->h()+5); // place it inside parent window
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
     glutCreateWindow("Simulation view");
     /* end adding children */
     panel->end();
-    panel->resizable(glut_window); 
+    panel->resizable(glut_window);
+    panel->callback(cb_close, &ws); // callback
  
     // init Sim view
     SimView_init(width-10, height-tool->h()-10);// pass gl window size
+
+    // open panels according to last use info
+    tool->restore_from_configs(&(tool->ws), (void*)ui);
 };
 /* End of SimUI.cxx */
