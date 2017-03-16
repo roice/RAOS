@@ -1,6 +1,8 @@
 #ifndef SimUI_H
 #define SimUI_H
 
+#include "FL/Fl_Widget.H"
+
 struct SimUI_Widgets {
     void*   toolbar;
 };

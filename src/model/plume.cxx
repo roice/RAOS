@@ -4,6 +4,7 @@
  * Author: Roice (LUO Bing)
  * Date: 2016-02-26 create this file (RAOS)
  */
+#include <cmath>
 #include <vector>
 #include <time.h> // for random seed
 #include "model/plume.h"
@@ -57,6 +58,10 @@ class FilaModel
 
         void update(SimState_t* sim_state) // update fila
         {
+#ifdef RAOS_FEATURE_WAKES
+            if (!sim_state->wake_initialized) return;
+#endif
+
             float wind_x, wind_y, wind_z;
             float vm_x, vm_y, vm_z;
 
@@ -92,13 +97,14 @@ class FilaModel
         /* Step 3: fila maintainance */
             fila_num_need_release += config.pps*sim_state->dt;
             // remove fila which moved outside sim area
+            SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
             int n = state.size(), i = 0;
             bool moved_outside = false;
             while (i != n) {
-                for (int j = 0; j < 3; j++) {
-                    if (state.at(i).pos[j] > 5.0 || state.at(i).pos[j] < -5.0)
-                        moved_outside = true;
-                }
+                if (    std::abs(state.at(i).pos[0]) > configs->arena.w/2.0 or
+                        std::abs(state.at(i).pos[1]) > configs->arena.l/2.0 or
+                        std::abs(state.at(i).pos[2]) > configs->arena.h/2.0 )
+                    moved_outside = true;
                 if (moved_outside == true) {
                     state.erase(state.begin()+i);
                     n--;
@@ -135,7 +141,7 @@ class FilaModel
 
 /*==============   Plume Model  ============*/
 #if defined(USE_FILAMENT_MODEL)
-FilaModel *fila;
+FilaModel *fila = NULL;
 #endif
 
 void plume_init(void)
@@ -150,6 +156,18 @@ void plume_update(SimState_t* sim_state)
 {
 #if defined(USE_FILAMENT_MODEL)
     fila->update(sim_state);
+#endif
+}
+
+void plume_destroy(void)
+{
+#if defined(USE_FILAMENT_MODEL)
+    if (fila) {
+        fila->state.clear();
+        std::vector<FilaState_t>().swap(fila->state);
+        delete fila;
+        fila = NULL;
+    }
 #endif
 }
 

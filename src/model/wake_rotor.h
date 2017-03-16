@@ -65,6 +65,7 @@ class RotorWake {
         RotorWake(void); // constructor
         void init(void); // rotor wake init
         void maintain(const char*); // marker release & remove, to maintain a fixed length of vortex filament
+        void destroy(void);
         std::vector<VortexMarker_t>** wake_state; // wake_state[i] is the pointer of a std::vector, which contains the markers of a whole filament
         RotorWakeConfig_t config; // configures of rotor wake simulation
         RotorState_t rotor_state;

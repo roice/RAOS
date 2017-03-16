@@ -11,6 +11,10 @@
 
 #include GL_HEADER
 
+/* thread */
+#include <pthread.h>
+
+#include "SimThread.h"
 #include "model/SimModel.h"
 #include "ui/draw/draw_robots.h" // robots visualization
 #include "ui/draw/draw_arena.h" // arena visualization
@@ -35,7 +39,7 @@ GLfloat position1[4] = { -2.0, 100.5, 1.0, 0.0 };
  *--------------------------------------------------------------------------
  */
 void DrawScene(void)
-{
+{ 
     /* GL stuff */
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, localAmb);
   	glLightModeli(GL_LIGHT_MODEL_LOCAL_VIEWER, 1);
@@ -57,6 +61,11 @@ void DrawScene(void)
     /* draw arena */
     draw_arena(SIM_ARENA_BASIC);
 
+    if (!sim_is_running_or_not())
+        return;
+
+    pthread_mutex_lock(sim_get_data_lock());
+
     /* draw quadrotor */
     draw_robots(SimModel_get_robots());
 
@@ -67,6 +76,8 @@ void DrawScene(void)
 
     /* draw plume */
     draw_plume();
+
+    pthread_mutex_unlock(sim_get_data_lock());
 }
 
 void DrawScene_init(void) // call before DrawScene

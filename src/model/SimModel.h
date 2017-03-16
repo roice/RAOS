@@ -16,13 +16,14 @@
 typedef struct {
     double time;
     double dt;
-    bool initialized;
+    bool wake_initialized;
 }SimState_t;
 
 void SimModel_init(void);
 void SimModel_update(void);
-void SimModel_finish(void);
+void SimModel_destroy(void);
 std::vector<Robot*>* SimModel_get_robots(void);
+SimState_t* SimModel_get_sim_state(void);
 
 #endif
 /* End of SimModel.h */

@@ -15,6 +15,7 @@
 
 void plume_init(void);
 void plume_update(SimState_t*);
+void plume_destroy(void);
 
 #if defined(USE_FILAMENT_MODEL)
 #define MAX_NUM_PUFFS 10000

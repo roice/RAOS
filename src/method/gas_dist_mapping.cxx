@@ -1,16 +1,22 @@
 /*
- * Simulation Loop of Robot Active Olfaction
- *
- * This file implements the simulation loop of RAOS
+ * Gas Distribution Mapping
  *
  * Author: Roice (LUO Bing)
- * Date: 2016-02-24 create this file
+ * Date: 2017-03-16 create this file
  */
 #include "model/robot.h"
 #include "model/SimModel.h"
-#include "SimLoop.h"
 #include <math.h>
 #include <stdio.h>
+
+class GasDistMapping {
+    public:
+        GasDistMapping(void);
+        void waypoint_update(Robot*, SimState_t*);
+    private:
+        float zigzag_waypoints[20][3];
+        int next_waypoint_index;
+};
 
 GasDistMapping::GasDistMapping(void)
 {
@@ -35,7 +41,7 @@ GasDistMapping::GasDistMapping(void)
 
 void GasDistMapping::waypoint_update(Robot* robot, SimState_t* sim_state)
 {
-    float vel_nrm = 0.1; // 1 m/s
+    float vel_nrm = 1.0; // velocity
 
     // get robot's position
     float* pos = &(robot->state.pos[0]);
@@ -66,4 +72,18 @@ void GasDistMapping::waypoint_update(Robot* robot, SimState_t* sim_state)
     }
 }
 
-/* End of file SimLoop.cxx */
+GasDistMapping *gdm;
+bool gas_dist_mapping_init(void)
+{
+    gdm = new GasDistMapping();
+}
+void gas_dist_mapping_update(SimState_t* sim_state)
+{
+    gdm->waypoint_update((SimModel_get_robots())->at(0), sim_state);
+}
+void gas_dist_mapping_stop(void)
+{
+    delete gdm;
+}
+
+/* End of file gas_dist_mapping.cxx */

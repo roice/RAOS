@@ -146,6 +146,21 @@ void Robot::update(void) {
     } 
 }
 
+void Robot::destroy(void) {
+#ifdef RAOS_FEATURE_WAKES
+    if (wakes.size()) {
+        for (int i = 0; i < wakes.size(); i++) {
+            wakes.at(i)->destroy();
+            delete wakes.at(i);
+        }
+        wakes.clear();
+        std::vector<RotorWake*>().swap(wakes);
+    }
+#endif
+    record.clear();
+    std::vector<RobotState_t>().swap(record);
+}
+
 
 
 /* End of file robot.cxx */

@@ -42,6 +42,7 @@ class Robot {
         Robot(const char* robot_type_name); // constructor
         void init(void);
         void update(void);
+        void destroy(void);
 
 #ifdef RAOS_FEATURE_WAKES
         std::vector<RotorWake*> wakes; // pointer of array containing pointers of RotorWake instances describing wakes of rotors (if has)

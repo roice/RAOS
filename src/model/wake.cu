@@ -543,7 +543,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, Si
     for(idx_robot = 0; idx_robot < robots->size(); idx_robot++)
     {
         for (idx_rotor = 0; idx_rotor < robots->at(idx_robot)->wakes.size(); idx_rotor++) {
-            if (sim_state->initialized)
+            if (sim_state->wake_initialized)
                 robots->at(idx_robot)->wakes.at(idx_rotor)->maintain("turn_by_turn");
             else
                 robots->at(idx_robot)->wakes.at(idx_rotor)->maintain("one_by_one");

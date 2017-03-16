@@ -3,7 +3,7 @@
  *
  * This file contains configuration data and methods of RAOS.
  * The declarations of the classes, functions and data are written in 
- * file SimConfig.h, which is included by SimMain.cxx SimLoop.cxx and
+ * file SimConfig.h, which is included by SimMain.cxx and
  * user interface & drawing files.
  *
  * Author: Roice (LUO Bing)

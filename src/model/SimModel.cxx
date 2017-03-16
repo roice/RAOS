@@ -13,7 +13,7 @@
     #include "model/wake.h"
 #endif
 #include "model/SimModel.h"
-#include "SimLoop.h"
+#include "method/method.h"
 #include <math.h>
 
 #include <stdio.h>
@@ -22,8 +22,6 @@
 static std::vector<Robot*> robots; // pointer array of robot instances
 
 static SimState_t sim_state;
-
-GasDistMapping gdm;
 
 void SimModel_init(void)
 {
@@ -45,16 +43,26 @@ void SimModel_init(void)
     WakesIndVelatPlumePuffsInit(&robots, plume_get_fila_state());
 #endif
 
+    /* init method */
+    method_init(METHOD_GAS_DIST_MAPPING); // gas distribution mapping
+
     /* init timing */
     sim_state.time = 0.0;
+#ifdef RAOS_FEATURE_WAKES
     sim_state.dt = 20.0/360.0/50.0;
-    sim_state.initialized = false;
+    sim_state.wake_initialized = false;
+#else
+    sim_state.dt = 1.0/50.0; // 50 Hz
+#endif
 }
 
 void SimModel_update(void) {
     /* update strategy */
-    if (sim_state.time > 10.0)
-        gdm.waypoint_update(robots.at(0), &sim_state);
+#ifdef RAOS_FEATURE_WAKES
+    if (sim_state.wake_initialized)
+#endif
+        method_update(&sim_state);
+        
     /* update robot */
     for (int i = 0; i < robots.size(); i++)
         robots.at(i)->update();
@@ -93,18 +101,36 @@ printf("v_z = %f, size_m = %d\n", plume->back().vel[2], robots.at(0)->wakes.at(0
 
     /* update timing */
     sim_state.time += sim_state.dt;
-    if (sim_state.time > 0.5 && sim_state.initialized == false) {
-        sim_state.initialized = true;
+#ifdef RAOS_FEATURE_WAKES
+    if (sim_state.time > 0.5 && sim_state.wake_initialized == false) {
+        sim_state.wake_initialized = true;
         sim_state.dt = 18.0*sim_state.dt;
     }
+#endif
 }
 
-void SimModel_finish(void)
+void SimModel_destroy(void)
 {
 #ifdef RAOS_FEATURE_WAKES
     // free memory of GPU computation
     WakesFinish();
 #endif
+    // destroy plumes
+    plume_destroy();
+    // destroy robots
+    if (robots.size()) {
+        for (int i = 0; i < robots.size(); i++)
+        {
+            robots.at(i)->destroy();
+            delete robots.at(i);
+        }
+        robots.clear();
+    }
+}
+
+SimState_t* SimModel_get_sim_state(void)
+{
+    return &sim_state;
 }
 
 // get the pointer to the robots

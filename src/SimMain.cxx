@@ -8,7 +8,6 @@
 
 #include "FL/Fl.H"
 #include "ui/SimUI.h" // control panel and GL view
-#include "model/SimModel.h" // models
 #include "SimConfig.h" // settings
 
 /***************************************************************/
@@ -18,10 +17,7 @@
 int main(int argc, char **argv) 
 {
     /* initialize sim settings */
-    SimConfig_restore();
-
-    /* initialize simulator stuff (quadrotor, plume, etc.) */
-  	SimModel_init();
+    SimConfig_restore(); 
     
     // Create a window for simulation
     SimUI ui(800, 600, "Robot Active Olfaction Simulator");
@@ -31,9 +27,7 @@ int main(int argc, char **argv)
 
     // save configs before closing
     SimConfig_save();
-
-    // delete events, free memory...
-    SimModel_finish();
+    
     return 0;
 }
 

@@ -279,4 +279,14 @@ RotorWake::RotorWake(void)
 #endif
 }
 
+void RotorWake::destroy(void)
+{
+    // destroy wake_state
+    for (int i = 0; i < rotor_state.frame.n_blades; i++) {
+        wake_state[i]->clear();
+        delete wake_state[i];
+    }
+    free(wake_state);
+}
+
 /* End of file wake_rotor.cxx */

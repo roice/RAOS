@@ -140,6 +140,7 @@ endif()
 #---- start compiling ----
 set(LIB_UI_NAME ui)
 set(LIB_MODEL_NAME model) # models
+set(LIB_METHOD_NAME method) # methods
 # make a library from quadrotor model files
 if(RAOS_FEATURE_WAKES)
     cuda_add_library(${LIB_MODEL_NAME} 
@@ -170,9 +171,14 @@ else()
         src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
         )
 endif()
+
+# make a library from method files
+add_library(${LIB_METHOD_NAME} src/method/method.cxx
+        src/method/gas_dist_mapping.cxx
+        )
 # compile main file
-add_executable(${PRJ_NAME} src/SimMain.cxx src/SimLoop.cxx src/SimConfig.cxx src/SimRecord.cxx)
-add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
+add_executable(${PRJ_NAME} src/SimMain.cxx src/SimThread.cxx src/SimConfig.cxx src/SimRecord.cxx)
+add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME} ${LIB_METHOD_NAME})
 
 #---- start linking ----
 # Note: the former line depends on the next line
@@ -180,6 +186,8 @@ add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME})
 target_link_libraries(${PRJ_NAME} ${LIB_MODEL_NAME})
 # link GUI library created above
 target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
+# link method library created above
+target_link_libraries(${PRJ_NAME} ${LIB_METHOD_NAME})
 # link external FLTK library
 target_link_libraries(${PRJ_NAME} fltk)
 # link external OpenGL library

@@ -21,6 +21,7 @@
 #include "ui/agv.h" // eye movement
 #include "ui/draw/DrawScene.h" // draw sim scene
 #include "SimConfig.h"
+#include "SimThread.h"
 #include "model/SimModel.h"
 
 // width and height of current window, for redraw function
@@ -37,7 +38,7 @@ static void SimView_reshape(int w, int h)
 }
 
 static void draw_axes(void);// draw axes
-static void draw_fps_note(void);//draw FPS note
+static void draw_notes(void);//draw notes
 static void SimView_redraw(void)
 {
     /* change eye moving */
@@ -55,8 +56,8 @@ static void SimView_redraw(void)
     /* draw axes on the ground */
     draw_axes();
 
-    /* draw FPS note */
-    draw_fps_note();
+    /* draw note */
+    draw_notes();
     
     glutSwapBuffers(); // using two buffers mode
 
@@ -112,7 +113,7 @@ static void draw_axes(void)
     }glEnable(GL_LIGHTING);
 }
 
-static void draw_fps_note(void)
+static void draw_ui_fps_note(void)
 {
     time_t curtime; // current time
     char buf[255];
@@ -142,10 +143,34 @@ static void draw_fps_note(void)
     }
 }
 
-static void SimView_idle(void) {
-    // update models
-    SimModel_update();
+static void draw_sim_time_note(void)
+{
+    char buf[256];
 
+    if (!sim_is_running_or_not())
+        return;
+
+    double time_passed = (SimModel_get_sim_state())->time;
+    
+    glDisable(GL_LIGHTING);
+    {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluOrtho2D(0.0, sim_width, 0.0, sim_height);
+        sprintf(buf, "Time= %d m %.1f s", (int)(time_passed/60), time_passed-((int)(time_passed/60))*60);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        gl_font(FL_HELVETICA, 12);
+        gl_draw(buf, 260, 10);
+    }glEnable(GL_LIGHTING);
+}
+
+static void draw_notes(void) {
+    draw_ui_fps_note();     // frames per second of UI
+    draw_sim_time_note(); // simulation time passed since start
+}
+
+
+static void SimView_idle(void) { 
     // update view
     if (agvMoving) agvMove();
     SimView_redraw();
