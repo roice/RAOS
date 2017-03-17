@@ -49,7 +49,7 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
 	glZ = -state->pos[1];
 	glY = state->pos[2];
  	phi = state->attitude[0];
-	theta = state->attitude[1];
+	theta = -state->attitude[1];
 	psi = state->attitude[2];
 
     /* draw the quad rotor */

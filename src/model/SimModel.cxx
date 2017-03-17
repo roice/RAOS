@@ -30,6 +30,9 @@ void SimModel_init(void)
     new_robot->state.pos[0] = 0.5;
     new_robot->state.pos[1] = 4.5;
     new_robot->state.pos[2] = 2.0;
+    new_robot->state.attitude[0] = 0.0;
+    new_robot->state.attitude[1] = M_PI/6.;
+    new_robot->state.attitude[2] = 0;
     new_robot->init();
     robots.push_back(new_robot);
 
