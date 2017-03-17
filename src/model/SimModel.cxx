@@ -46,8 +46,10 @@ void SimModel_init(void)
     WakesIndVelatPlumePuffsInit(&robots, plume_get_fila_state());
 #endif
 
+#if 0
     /* init method */
     method_init(METHOD_GAS_DIST_MAPPING); // gas distribution mapping
+#endif
 
     /* init timing */
     sim_state.time = 0.0;
@@ -60,12 +62,14 @@ void SimModel_init(void)
 }
 
 void SimModel_update(void) {
+#if 0
     /* update strategy */
 #ifdef RAOS_FEATURE_WAKES
     if (sim_state.wake_initialized)
 #endif
         method_update(&sim_state);
-        
+#endif
+
     /* update robot */
     for (int i = 0; i < robots.size(); i++)
         robots.at(i)->update();

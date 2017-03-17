@@ -129,6 +129,10 @@ void Robot::update(void) {
     }
     /******* Quadrotor *******/
     else if (config.type == quadrotor) {
+
+        float pos_ref[3] = {0,0,2};
+        dynamic.Dynamic(pos_ref, state.pos, state.attitude, 0.02);
+
 #ifdef RAOS_FEATURE_WAKES
         /* syncronize rotors' attitude and pos (for wake computation) with robot */
         for (int i = 0; i < 4; i++) { // init four rotor wakes
