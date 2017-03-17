@@ -48,9 +48,9 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
   	glX = state->pos[0];
 	glZ = -state->pos[1];
 	glY = state->pos[2];
- 	phi = state->attitude[0];
-	theta = state->attitude[1];
-	psi = state->attitude[2];
+ 	phi = state->att[0];
+	theta = state->att[1];
+	psi = state->att[2];
 
     /* draw the quad rotor */
     glPushMatrix(); 

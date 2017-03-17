@@ -24,7 +24,7 @@ typedef struct
 /* rotate a vector to given euler angles */
 void rotate_vector(const float*, float*, float, float, float);
 
-/* calculate four rotors' pos according to quadrotor's pos and attitude */
-void QRCalculateAllRotorPos(const float* pos, const float* attitude, float strut, float* rpos1, float* rpos2, float* rpos3, float* rpos4);
+/* calculate four rotors' pos according to quadrotor's pos and att */
+void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, float* rpos1, float* rpos2, float* rpos3, float* rpos4);
 
 #endif /* End of file quadrotor.h */

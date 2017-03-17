@@ -32,7 +32,7 @@ typedef struct {
 typedef struct {    
     float pos[3];	/* position coordinate (earth axis x), volatile */
     float vel[3];
-    float attitude[3]; // yaw, pitch, roll
+    float att[3]; // yaw, pitch, roll
     int   leds;
     float gas_sensor; // reading of gas sensor
 }RobotState_t;

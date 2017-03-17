@@ -88,7 +88,7 @@ void RotorWake::maintain(const char* marker_maintain_type)
             for (int j = markers_per_turn-1; j >= 0; j--) {
                 // calculate the position of this marker     
                 memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
-                rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
+                rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j+rotor_state.att[0], rotor_state.att[1], rotor_state.att[2]);
                 for (int k = 0; k < 3; k++) // integrate
                     new_marker.pos[k] += vel[k]*j*(config.dpsi*PI/180.0)/rotor_state.Omega;
                 // calculate radius of vortex core
@@ -190,7 +190,7 @@ void RotorWake::marker_release(void) {
     for (int i = 0; i < rotor_state.frame.n_blades; i++) {
         // calculate the position of this marker     
         memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
-        rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
+        rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.att[0], rotor_state.att[1], rotor_state.att[2]);
         // push to wake state array
         wake_state[i]->push_back(new_marker);
 #if defined(WAKE_IGE)
@@ -245,7 +245,7 @@ void RotorWake::init_wake_geometry(void) {
             memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
             new_marker.pos[2] += z_tip;
             rotor_state.psi = -(rotor_state.direction)*(psi_rad - floor(psi_rad/(2*PI))*(2*PI))*180.0f/PI;
-            rotate_vector(p_marker, new_marker.pos, rotor_state.psi + 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.attitude[0], rotor_state.attitude[1], rotor_state.attitude[2]);
+            rotate_vector(p_marker, new_marker.pos, rotor_state.psi + 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.att[0], rotor_state.att[1], rotor_state.att[2]);
             // push to wake state array
             wake_state[i]->push_back(new_marker);
         }
@@ -266,7 +266,7 @@ RotorWake::RotorWake(void)
     rotor_state.frame.chord = 0.01; // meter
     rotor_state.frame.n_blades = 2; // two-blade
     memset(rotor_state.pos, 0, sizeof(rotor_state.pos));
-    memset(rotor_state.attitude, 0, sizeof(rotor_state.attitude));
+    memset(rotor_state.att, 0, sizeof(rotor_state.att));
     rotor_state.Omega = 50*2*PI; // rad/s
     rotor_state.psi = 0;
     rotor_state.thrust = 1.0; // 1 N, ~100 g

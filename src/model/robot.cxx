@@ -26,7 +26,7 @@ Robot::Robot(const char* robot_type_name)
         ((HLframe_t*)(config.frame))->main_prop_chord = 0.01; // chord
         
         memset(state.pos, 0, sizeof(state.pos));
-        memset(state.attitude, 0, sizeof(state.attitude));
+        memset(state.att, 0, sizeof(state.att));
     }
     /******* QuadRotor *******/
     else if (strcmp(robot_type_name, "quadrotor") == 0) {
@@ -42,7 +42,7 @@ Robot::Robot(const char* robot_type_name)
         ((QRframe_t*)(config.frame))->mass = 0.8; // kg
 
         memset(state.pos, 0, sizeof(state.pos));
-        memset(state.attitude, 0, sizeof(state.attitude));
+        memset(state.att, 0, sizeof(state.att));
     }
     /******* Other *******/
     else {// cannot recognize robot type
@@ -66,8 +66,8 @@ void Robot::init(void)
                 = ((HLframe_t*)(config.frame))->main_prop_chord;
             new_wake->rotor_state.thrust = 0.2*9.8; // 0.1 kg
             memcpy(new_wake->rotor_state.pos, state.pos, sizeof(state.pos));
-            memcpy(new_wake->rotor_state.attitude,
-                state.attitude, sizeof(state.attitude));
+            memcpy(new_wake->rotor_state.att,
+                state.att, sizeof(state.att));
             new_wake->init();
             wakes.push_back(new_wake);
         }
@@ -93,12 +93,12 @@ void Robot::init(void)
                     new_wake->rotor_state.direction = WAKE_ROTOR_CLOCKWISE;
                 else
                     new_wake->rotor_state.direction = WAKE_ROTOR_CCLOCKWISE;
-                memcpy(new_wake->rotor_state.attitude,
-                    state.attitude, sizeof(state.attitude)); 
+                memcpy(new_wake->rotor_state.att,
+                    state.att, sizeof(state.att)); 
                 wakes.push_back(new_wake);
             }
             // init four rotor pos for wake computation
-            QRCalculateAllRotorPos(state.pos, state.attitude, ((QRframe_t*)(config.frame))->size/2.0, wakes.at(0)->rotor_state.pos, wakes.at(1)->rotor_state.pos, wakes.at(2)->rotor_state.pos, wakes.at(3)->rotor_state.pos);
+            QRCalculateAllRotorPos(state.pos, state.att, ((QRframe_t*)(config.frame))->size/2.0, wakes.at(0)->rotor_state.pos, wakes.at(1)->rotor_state.pos, wakes.at(2)->rotor_state.pos, wakes.at(3)->rotor_state.pos);
             for (int i = 0; i < 4; i++) // init four rotor wakes
                 wakes.at(i)->init(); 
         }
@@ -119,20 +119,20 @@ void Robot::update(void) {
     /******* Helicopter *******/
     if (config.type == helicopter) {
 #ifdef RAOS_FEATURE_WAKES
-        /* syncronize rotor attitude and pos (for wake computation) with robot */
+        /* syncronize rotor att and pos (for wake computation) with robot */
         memcpy(wakes.at(0)->rotor_state.pos, state.pos, sizeof(state.pos));
-        memcpy(wakes.at(0)->rotor_state.attitude,
-            state.attitude, sizeof(state.attitude));
+        memcpy(wakes.at(0)->rotor_state.att,
+            state.att, sizeof(state.att));
 #endif
     }
     /******* Quadrotor *******/
     else if (config.type == quadrotor) {
 #ifdef RAOS_FEATURE_WAKES
-        /* syncronize rotors' attitude and pos (for wake computation) with robot */
+        /* syncronize rotors' att and pos (for wake computation) with robot */
         for (int i = 0; i < 4; i++) // init four rotor wakes
-            memcpy(wakes.at(i)->rotor_state.attitude,
-                state.attitude, sizeof(state.attitude)); 
-        QRCalculateAllRotorPos(state.pos, state.attitude,
+            memcpy(wakes.at(i)->rotor_state.att,
+                state.att, sizeof(state.att)); 
+        QRCalculateAllRotorPos(state.pos, state.att,
             ((QRframe_t*)(config.frame))->size/2.0,
             wakes.at(0)->rotor_state.pos,
             wakes.at(1)->rotor_state.pos,

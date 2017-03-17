@@ -82,8 +82,8 @@ void rotate_vector(const float* vector, float* out, float yaw, float pitch, floa
     cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, R_zyx, 3, vector, 1, 1.0, out, 1);
 }
 
-/* calculate four rotors' pos according to quadrotor's pos and attitude */
-void QRCalculateAllRotorPos(const float* pos, const float* attitude, float strut, float* rpos1, float* rpos2, float* rpos3, float* rpos4) {
+/* calculate four rotors' pos according to quadrotor's pos and att */
+void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, float* rpos1, float* rpos2, float* rpos3, float* rpos4) {
     // init rotor pos vector
     memcpy(rpos1, pos, 3*sizeof(float));
     memcpy(rpos2, pos, 3*sizeof(float));
@@ -92,10 +92,10 @@ void QRCalculateAllRotorPos(const float* pos, const float* attitude, float strut
 
     // calculate rotor pos
     float v[3] = {strut, 0.0, 0.0};
-    rotate_vector(v, rpos1, attitude[0], attitude[1], attitude[2]);
-    rotate_vector(v, rpos2, 90+attitude[0], attitude[1], attitude[2]);
-    rotate_vector(v, rpos3, 180+attitude[0], attitude[1], attitude[2]);
-    rotate_vector(v, rpos4, 270+attitude[0], attitude[1], attitude[2]);
+    rotate_vector(v, rpos1, att[0], att[1], att[2]);
+    rotate_vector(v, rpos2, 90+att[0], att[1], att[2]);
+    rotate_vector(v, rpos3, 180+att[0], att[1], att[2]);
+    rotate_vector(v, rpos4, 270+att[0], att[1], att[2]);
 }
 
 /* End of file quadrotor.cxx */
