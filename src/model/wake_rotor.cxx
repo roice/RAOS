@@ -13,8 +13,11 @@
 #include <string.h> // memset
 #include "cblas.h" // CBLAS for vector arithmetic
 #include "model/wake_rotor.h"
+#include "common/math/rotation.h"
 
-#define PI 3.14159265358979323846
+#ifndef RAD2DEG
+#define RAD2DEG (180.0/M_PI)
+#endif
 
 void RotorWake::init(void) // rotor wake initialization
 {// by far config and rotor_state should be artificially configured
@@ -78,7 +81,8 @@ void RotorWake::maintain(const char* marker_maintain_type)
             vel[i] = sum_vel[i]/double(count);
         /* release a turn of markers */
         VortexMarker_t new_marker;
-        float p_marker[3] = {rotor_state.frame.radius, 0, 0};
+        float pos_marker_v[3] = {rotor_state.frame.radius, 0, 0}; // vector used to calculate pos marker in body axis
+        float pos_marker_p[3] = {0}; // position of marker in body axis
         memset(new_marker.vel, 0, sizeof(new_marker.vel));
         // calculate the tip vortex circulation: Gamma
         new_marker.Gamma = -(rotor_state.direction)*2.0f*rotor_state.thrust/rotor_state.frame.n_blades/(rotor_state.frame.radius*rotor_state.frame.radius)/1.185f/rotor_state.Omega; // tip vortex circulation
@@ -88,11 +92,13 @@ void RotorWake::maintain(const char* marker_maintain_type)
             for (int j = markers_per_turn-1; j >= 0; j--) {
                 // calculate the position of this marker     
                 memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
-                rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j+rotor_state.att[0], rotor_state.att[1], rotor_state.att[2]);
+                memset(pos_marker_p, 0, sizeof(pos_marker_p));
+                rotate_vector(pos_marker_v, pos_marker_p, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j, 0, 0);
+                rotate_vector(pos_marker_p, new_marker.pos, rotor_state.att[0]*RAD2DEG, rotor_state.att[1]*RAD2DEG, rotor_state.att[2]*RAD2DEG);
                 for (int k = 0; k < 3; k++) // integrate
-                    new_marker.pos[k] += vel[k]*j*(config.dpsi*PI/180.0)/rotor_state.Omega;
+                    new_marker.pos[k] += vel[k]*j*(config.dpsi*M_PI/180.0)/rotor_state.Omega;
                 // calculate radius of vortex core
-                new_marker.r = sqrt(new_marker.r_init*new_marker.r_init + 4.0f*1.25643f*4.0*0.01834f*j*(config.dpsi*PI/180.0)/rotor_state.Omega);
+                new_marker.r = sqrt(new_marker.r_init*new_marker.r_init + 4.0f*1.25643f*4.0*0.01834f*j*(config.dpsi*M_PI/180.0)/rotor_state.Omega);
                 // push to wake state array
                 wake_state[i]->push_back(new_marker);
 #if defined(WAKE_IGE)
@@ -175,8 +181,9 @@ void RotorWake::maintain_markers(void) {
 void RotorWake::marker_release(void) {
 
     VortexMarker_t new_marker;
-    float p_marker[3] = {rotor_state.frame.radius, 0, 0};
-
+    float pos_marker_v[3] = {rotor_state.frame.radius, 0, 0}; // vector used to calculate pos marker in body axis
+    float pos_marker_p[3] = {0}; // position of marker in body axis
+    
     // clear velocity
     memset(new_marker.vel, 0, sizeof(new_marker.vel));
 
@@ -190,7 +197,9 @@ void RotorWake::marker_release(void) {
     for (int i = 0; i < rotor_state.frame.n_blades; i++) {
         // calculate the position of this marker     
         memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
-        rotate_vector(p_marker, new_marker.pos, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.att[0], rotor_state.att[1], rotor_state.att[2]);
+        memset(pos_marker_p, 0, sizeof(pos_marker_p));
+        rotate_vector(pos_marker_v, pos_marker_p, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi, 0, 0);
+        rotate_vector(pos_marker_p, new_marker.pos, rotor_state.att[0]*RAD2DEG, rotor_state.att[1]*RAD2DEG, rotor_state.att[2]*RAD2DEG);
         // push to wake state array
         wake_state[i]->push_back(new_marker);
 #if defined(WAKE_IGE)
@@ -209,7 +218,8 @@ void RotorWake::marker_release(void) {
 #if defined(WAKE_BC_INIT)
 void RotorWake::init_wake_geometry(void) {
     VortexMarker_t new_marker;
-    float p_marker[3] = {0, 0, 0};
+    float pos_marker_v[3] = {0}; // vector used to calculate pos marker in body axis
+    float pos_marker_p[3] = {0}; // position of marker in body axis
     float z_tip, r_tip, C_T, sigma, psi_rad;
     
     // clear velocity
@@ -223,29 +233,31 @@ void RotorWake::init_wake_geometry(void) {
     new_marker.r = new_marker.r_init;
 
     // calculate thrust coefficient and sigma
-    C_T = rotor_state.thrust/(1.185f*PI*pow(rotor_state.Omega,2)*pow(rotor_state.frame.radius,4));
-    sigma = rotor_state.frame.n_blades*rotor_state.frame.chord/(PI*rotor_state.frame.radius);
+    C_T = rotor_state.thrust/(1.185f*M_PI*pow(rotor_state.Omega,2)*pow(rotor_state.frame.radius,4));
+    sigma = rotor_state.frame.n_blades*rotor_state.frame.chord/(M_PI*rotor_state.frame.radius);
 
     for (int j = max_markers-1; j >= 0; j--) {
         // calculate psi
-        psi_rad = j*config.dpsi*PI/180.0f;
+        psi_rad = j*config.dpsi*M_PI/180.0f;
         // calculate r_tip
         r_tip = rotor_state.frame.radius*(0.78f+(1.0f-0.78f)*exp(-(0.145+27*C_T)*psi_rad));
-        p_marker[0] = r_tip;
+        pos_marker_v[0] = r_tip;
         // calculate z_tip
-        if (psi_rad <= 2*PI/rotor_state.frame.n_blades)
+        if (psi_rad <= 2*M_PI/rotor_state.frame.n_blades)
             z_tip = rotor_state.frame.radius*(psi_rad*(-0.25)*(C_T/sigma)); // assume blade twist is 10 deg
         else
             z_tip = rotor_state.frame.radius*(
-                    2*PI/rotor_state.frame.n_blades*(-0.25)*(C_T/sigma)
-                    + (psi_rad-2*PI/rotor_state.frame.n_blades)
+                    2*M_PI/rotor_state.frame.n_blades*(-0.25)*(C_T/sigma)
+                    + (psi_rad-2*M_PI/rotor_state.frame.n_blades)
                     * (-1.41*sqrt(C_T/2.0))); 
         for (int i = 0; i < rotor_state.frame.n_blades; i++) {
             // calculate the position of this marker     
             memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
             new_marker.pos[2] += z_tip;
-            rotor_state.psi = -(rotor_state.direction)*(psi_rad - floor(psi_rad/(2*PI))*(2*PI))*180.0f/PI;
-            rotate_vector(p_marker, new_marker.pos, rotor_state.psi + 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+rotor_state.att[0], rotor_state.att[1], rotor_state.att[2]);
+            rotor_state.psi = -(rotor_state.direction)*(psi_rad - floor(psi_rad/(2*M_PI))*(2*M_PI))*180.0f/M_PI;
+            memset(pos_marker_p, 0, sizeof(pos_marker_p));
+            rotate_vector(pos_marker_v, pos_marker_p, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi, 0, 0);
+            rotate_vector(pos_marker_p, new_marker.pos, rotor_state.att[0]*RAD2DEG, rotor_state.att[1]*RAD2DEG, rotor_state.att[2]*RAD2DEG);
             // push to wake state array
             wake_state[i]->push_back(new_marker);
         }
@@ -267,7 +279,7 @@ RotorWake::RotorWake(void)
     rotor_state.frame.n_blades = 2; // two-blade
     memset(rotor_state.pos, 0, sizeof(rotor_state.pos));
     memset(rotor_state.att, 0, sizeof(rotor_state.att));
-    rotor_state.Omega = 50*2*PI; // rad/s
+    rotor_state.Omega = 50*2*M_PI; // rad/s
     rotor_state.psi = 0;
     rotor_state.thrust = 1.0; // 1 N, ~100 g
     rotor_state.direction = WAKE_ROTOR_CLOCKWISE;

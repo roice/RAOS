@@ -177,7 +177,8 @@ add_library(${LIB_METHOD_NAME} src/method/method.cxx
         src/method/gas_dist_mapping.cxx
         )
 # compile main file
-add_executable(${PRJ_NAME} src/SimMain.cxx src/SimThread.cxx src/SimConfig.cxx src/SimRecord.cxx)
+add_executable(${PRJ_NAME} src/SimMain.cxx src/SimThread.cxx src/SimConfig.cxx src/SimRecord.cxx
+        src/common/math/rotation.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME} ${LIB_METHOD_NAME})
 
 #---- start linking ----

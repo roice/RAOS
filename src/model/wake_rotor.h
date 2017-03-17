@@ -86,8 +86,5 @@ class RotorWake {
 #endif
 };
 
-/* rotate a vector to given euler angles */
-void rotate_vector(const float*, float*, float, float, float);
-
 #endif
 /* End of file wake_rotor.h */
