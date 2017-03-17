@@ -266,6 +266,7 @@ void ToolBar::cb_button_start(Fl_Widget *w, void *data)
         // release pause button
         widgets->pause->activate(); widgets->pause->clear();
         // continue running
+        *(sim_get_pauss_control_addr()) = false;
     }
     else {
         // if pause button is not pressed, then check start button state
@@ -280,7 +281,7 @@ void ToolBar::cb_button_start(Fl_Widget *w, void *data)
             // user is trying to release start button when pause is not pressed
             ((Fl_Button*)w)->value(1);
         }
-    } 
+    }
 }
 
 void ToolBar::cb_button_pause(Fl_Widget *w, void *data)
@@ -291,7 +292,7 @@ void ToolBar::cb_button_pause(Fl_Widget *w, void *data)
         widgets->start->value(0); // release start button
         widgets->pause->deactivate(); // make pause button unclickable
         // pause simulation...
-
+        *(sim_get_pauss_control_addr()) = true;
     }
     else {
     // if start button not pressed, pause button will not toggle and no code action will be took
@@ -366,8 +367,8 @@ Fl_Group(Xpos, Ypos, Width, Height)
     ws.config->tooltip("Settings");
     ws.record->tooltip("Recording");
     // types of buttons
-    ws.start->type(FL_RADIO_BUTTON); // start & pause are mutually exclusive
-    ws.pause->type(FL_RADIO_BUTTON);
+    ws.start->type(FL_TOGGLE_BUTTON); // start & pause are mutually exclusive
+    ws.pause->type(FL_TOGGLE_BUTTON);
     // colors
     ws.record->selection_color(FL_RED);
     // link call backs to buttons
