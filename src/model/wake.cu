@@ -574,8 +574,13 @@ void WakesInit(std::vector<Robot*>* robots)
         printf("\n");
     }
     if (count > 1) {// multiple graphic cards
-        printf("Warning: Multiple graphic cards have been found on this machine. Please modify the function WakeInit in the file src/model/wake.cu to choose the most appropriate card.\n");
-        exit(EXIT_FAILURE); // force the user to choose which card to use
+        if(count == 2){
+         HANDLE_ERROR( cudaSetDevice(1) );   //Set the second graphic to calculate
+        }
+        else{
+            printf("Warning: Multiple graphic cards have been found on this machine. Please modify the function WakeInit in the file src/model/wake.cu to choose the most appropriate card.\n");
+            exit(EXIT_FAILURE); // force the user to choose which card to use
+        }
     }
     else if (count <= 0) {// no graphic card found
         printf("Error: No graphic cards have been found on this machine. Please run this program on the machine with NVIDIA graphic cards.\n");
