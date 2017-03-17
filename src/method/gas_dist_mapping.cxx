@@ -44,26 +44,27 @@ void GasDistMapping::waypoint_update(Robot* robot, SimState_t* sim_state)
     float vel_nrm = 1.0; // velocity
 
     // get robot's position
-    float* pos = &(robot->state.pos[0]);
-    float* vel = &(robot->state.vel[0]);
+    float* ref_pos = &(robot->ref_state.pos[0]);
     float dist[3];
+
+    float ref_vel[3] = {0};
 
     if (next_waypoint_index >= 20)
         return;
 
     // calculate the direction to fly
     for (int i = 0; i < 3; i++)
-        dist[i] = zigzag_waypoints[next_waypoint_index][i] - pos[i];
+        dist[i] = zigzag_waypoints[next_waypoint_index][i] - ref_pos[i];
     double dist_nrm = sqrt(dist[0]*dist[0] + dist[1]*dist[1] + dist[2]*dist[2]);
     for (int i = 0; i < 3; i++) {
         if (fabs(dist[i]) < 0.001)
-            vel[i] = 0;
+            ref_vel[i] = 0;
         else
-            vel[i] = float(dist[i])*vel_nrm/dist_nrm;
+            ref_vel[i] = float(dist[i])*vel_nrm/dist_nrm;
     }
     // update robot's position
     for (int i = 0; i < 3; i++)
-        pos[i] += vel[i]*sim_state->dt;
+        ref_pos[i] += ref_vel[i]*sim_state->dt;
 
     if (fabs(dist[0]) < 0.1 && fabs(dist[1]) < 0.1 && fabs(dist[2]) < 0.1) {
         next_waypoint_index++;

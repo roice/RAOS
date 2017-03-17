@@ -13,7 +13,7 @@
 #include "model/quadrotor.h" // for QRframe_t and euler rotation functions
 
 Robot::Robot(const char* robot_type_name)
-{
+{ 
     /******* Helicopter *******/
     if (strcmp(robot_type_name, "helicopter") == 0) {
         config.type = helicopter;
@@ -43,6 +43,7 @@ Robot::Robot(const char* robot_type_name)
 
         memset(state.pos, 0, sizeof(state.pos));
         memset(state.att, 0, sizeof(state.att));
+        memset(ref_state.pos, 0, sizeof(ref_state.pos));
     }
     /******* Other *******/
     else {// cannot recognize robot type
@@ -50,8 +51,11 @@ Robot::Robot(const char* robot_type_name)
     }
 }
 
-void Robot::init(void)
+void Robot::init(float delta_t)
 {
+    // save args
+    dt = delta_t;
+    
     /******* Helicopter *******/
     if (config.type == helicopter) {
 #ifdef RAOS_FEATURE_WAKES
@@ -103,6 +107,9 @@ void Robot::init(void)
                 wakes.at(i)->init(); 
         }
 #endif
+        /* init quadrotor dynamic model */
+        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt);
+
         /* init leds */
         state.leds = 1;
     }
@@ -139,6 +146,8 @@ void Robot::update(void) {
             wakes.at(2)->rotor_state.pos,
             wakes.at(3)->rotor_state.pos);
 #endif
+        /* update quadrotor dynamic model */
+        ((QRdynamic*) model)->update();
     }
     /******* Other *******/
     else {
@@ -157,6 +166,9 @@ void Robot::destroy(void) {
         std::vector<RotorWake*>().swap(wakes);
     }
 #endif
+    if (config.type == quadrotor) {
+        delete ((QRdynamic*) model);
+    }
     record.clear();
     std::vector<RobotState_t>().swap(record);
 }

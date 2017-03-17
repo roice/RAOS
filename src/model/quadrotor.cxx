@@ -14,6 +14,7 @@
 #include <cmath>
 #include <string.h>
 #include "common/math/rotation.h"
+#include "model/quadrotor.h"
 
 #ifndef RAD2DEG
 #define RAD2DEG (180.0/M_PI)
@@ -46,5 +47,17 @@ void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, flo
     rotate_vector(v3, rpos3, att[0]*RAD2DEG, att[1]*RAD2DEG, att[2]*RAD2DEG);
     rotate_vector(v4, rpos4, att[0]*RAD2DEG, att[1]*RAD2DEG, att[2]*RAD2DEG);
 }
+
+QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t)
+{
+    // save parameters and addr
+    dt = delta_t;
+    QR_pos_ref = pos_ref;
+    QR_pos = pos;
+    QR_att = att;
+}
+
+void QRdynamic::update(void)
+{}
 
 /* End of file quadrotor.cxx */

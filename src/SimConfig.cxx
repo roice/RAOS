@@ -35,6 +35,8 @@ void SimConfig_restore(void)
         boost::property_tree::ptree pt;
         boost::property_tree::ini_parser::read_ini("settings.cfg", pt);
         /* restore configs */
+        // common
+        settings.common.dt = pt.get<float>("Common.dt");
         // arena
         settings.arena.w = pt.get<float>("Arena.width");
         settings.arena.l = pt.get<float>("Arena.length");
@@ -60,6 +62,8 @@ void SimConfig_save(void)
 {
     /* prepare to write configuration files */
     boost::property_tree::ptree pt;
+    // common
+    pt.put("Common.dt", settings.common.dt);
     // arena size
     pt.put("Arena.width", settings.arena.w);
     pt.put("Arena.length", settings.arena.l);
@@ -85,6 +89,8 @@ void SimConfig_save(void)
 void SimConfig_init(void)
 {
     /* init arena settings */
+    // common
+    settings.common.dt = 1.0/50.0; // 50 Hz
     // arena
     settings.arena.w = 10; // x
     settings.arena.l = 10; // y

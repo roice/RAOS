@@ -13,6 +13,10 @@
 #include <string>
 
 typedef struct {
+    float dt;
+}SimConfig_Common_t;
+
+typedef struct {
     /* width, length and height */
     float w;
     float l;
@@ -43,7 +47,7 @@ typedef struct {
 
 /* configuration struct */
 typedef struct {
-    /* Arena */
+    SimConfig_Common_t common;
     SimConfig_Arena_t arena;
     SimConfig_Source_t source;
     SimConfig_Plume_t plume;

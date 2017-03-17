@@ -14,6 +14,7 @@
 #endif
 #include "model/SimModel.h"
 #include "method/method.h"
+#include "SimConfig.h"
 #include <math.h>
 
 #include <stdio.h>
@@ -23,15 +24,28 @@ static std::vector<Robot*> robots; // pointer array of robot instances
 
 static SimState_t sim_state;
 
+#define ESTABLISH_WAKE_DT_DIVIDE 18.0
+
 void SimModel_init(void)
 {
+    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+
+    /* init timing */
+    sim_state.time = 0.0;
+#ifdef RAOS_FEATURE_WAKES
+    sim_state.dt = configs->common.dt/ESTABLISH_WAKE_DT_DIVIDE;
+    sim_state.wake_initialized = false;
+#else
+    sim_state.dt = configs->common.dt; // 50 Hz
+#endif
+
     /* create & init robot */
     Robot* new_robot = new Robot("quadrotor");
     new_robot->state.pos[0] = 0.5;
     new_robot->state.pos[1] = 4.5;
     new_robot->state.pos[2] = 2.0;
     new_robot->state.att[1] = M_PI*0.2;
-    new_robot->init();
+    new_robot->init(configs->common.dt);
     robots.push_back(new_robot);
 
     /* init plume */
@@ -45,16 +59,7 @@ void SimModel_init(void)
 #endif
 
     /* init method */
-    method_init(METHOD_GAS_DIST_MAPPING); // gas distribution mapping
-
-    /* init timing */
-    sim_state.time = 0.0;
-#ifdef RAOS_FEATURE_WAKES
-    sim_state.dt = 20.0/360.0/50.0;
-    sim_state.wake_initialized = false;
-#else
-    sim_state.dt = 1.0/50.0; // 50 Hz
-#endif
+    method_init(METHOD_GAS_DIST_MAPPING); // gas distribution mapping 
 }
 
 void SimModel_update(void) {
@@ -105,7 +110,7 @@ printf("v_z = %f, size_m = %d\n", plume->back().vel[2], robots.at(0)->wakes.at(0
 #ifdef RAOS_FEATURE_WAKES
     if (sim_state.time > 0.5 && sim_state.wake_initialized == false) {
         sim_state.wake_initialized = true;
-        sim_state.dt = 18.0*sim_state.dt;
+        sim_state.dt = ESTABLISH_WAKE_DT_DIVIDE*sim_state.dt;
     }
 #endif
 }

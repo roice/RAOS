@@ -37,19 +37,27 @@ typedef struct {
     float gas_sensor; // reading of gas sensor
 }RobotState_t;
 
+typedef struct {    
+    float pos[3];	/* position coordinate (earth axis x), volatile */
+}RobotRefState_t;
+
 class Robot {
     public:
         Robot(const char* robot_type_name); // constructor
-        void init(void);
+        void init(float delta_t);
         void update(void);
         void destroy(void);
 
 #ifdef RAOS_FEATURE_WAKES
         std::vector<RotorWake*> wakes; // pointer of array containing pointers of RotorWake instances describing wakes of rotors (if has)
 #endif
+        void* model; // robot dynamic model
         RobotState_t state; // robot state
+        RobotRefState_t ref_state; // robot reference state
         RobotConfig_t config; // robot configs
         std::vector<RobotState_t> record;
+    private:
+        float dt;
 };
 
 #endif
