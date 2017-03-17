@@ -28,7 +28,6 @@ typedef struct
 
 typedef struct {
     float pos[3];	/* position coordinate (earth axis x), volatile */
-    float QuadCenterPos[3]; /*center of quadrotor*/
     float attitude[3]; // [yaw, pitch, roll]
     float Omega; // rotation angular speed, volatile
     float direction; // rotation direction, 1.0 for clockwise, -1.0 for counter-clockwise

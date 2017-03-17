@@ -94,9 +94,7 @@ void Robot::init(void)
                 else
                     new_wake->rotor_state.direction = WAKE_ROTOR_CCLOCKWISE;
                 memcpy(new_wake->rotor_state.attitude,
-                    state.attitude, sizeof(state.attitude));
-                memcpy(new_wake->rotor_state.QuadCenterPos,
-                    state.pos, sizeof(state.pos));
+                    state.attitude, sizeof(state.attitude)); 
                 wakes.push_back(new_wake);
             }
             // init four rotor pos for wake computation
@@ -129,17 +127,11 @@ void Robot::update(void) {
     }
     /******* Quadrotor *******/
     else if (config.type == quadrotor) {
-
-        float pos_ref[3] = {0,0,2};
-        dynamic.Dynamic(pos_ref, state.pos, state.attitude, 0.02);
-
 #ifdef RAOS_FEATURE_WAKES
         /* syncronize rotors' attitude and pos (for wake computation) with robot */
-        for (int i = 0; i < 4; i++) { // init four rotor wakes
+        for (int i = 0; i < 4; i++) // init four rotor wakes
             memcpy(wakes.at(i)->rotor_state.attitude,
-                state.attitude, sizeof(state.attitude));
-            memcpy(wakes.at(i)->rotor_state.QuadCenterPos,state.pos, sizeof(state.pos));
-        }
+                state.attitude, sizeof(state.attitude)); 
         QRCalculateAllRotorPos(state.pos, state.attitude,
             ((QRframe_t*)(config.frame))->size/2.0,
             wakes.at(0)->rotor_state.pos,

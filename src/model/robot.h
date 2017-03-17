@@ -14,7 +14,6 @@
 #ifdef RAOS_FEATURE_WAKES
     #include "wake_rotor.h"
 #endif
-#include "quadrotor.h"
 
 enum RobotType{helicopter, quadrotor};
 
@@ -48,7 +47,6 @@ class Robot {
 #ifdef RAOS_FEATURE_WAKES
         std::vector<RotorWake*> wakes; // pointer of array containing pointers of RotorWake instances describing wakes of rotors (if has)
 #endif
-        QDynamicModel dynamic;
         RobotState_t state; // robot state
         RobotConfig_t config; // robot configs
         std::vector<RobotState_t> record;
