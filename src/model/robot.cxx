@@ -109,6 +109,7 @@ void Robot::init(float delta_t)
 #endif
         /* init quadrotor dynamic model */
         model = new QRdynamic(ref_state.pos, state.pos, state.att, dt);
+        memcpy((QRframe_t*)(config.frame), &(((QRdynamic*)model)->frame), sizeof(QRframe_t));
 
         /* init leds */
         state.leds = 1;

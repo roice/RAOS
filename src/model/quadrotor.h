@@ -19,6 +19,8 @@ typedef struct
     float prop_chord; // chord of propellers
     int prop_blades; // number of blades of a propeller
     float mass;
+    float I[9];
+    float k, b, kd;
 } QRframe_t;
 
 /* calculate four rotors' pos according to quadrotor's pos and att */
@@ -27,8 +29,8 @@ void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, flo
 typedef struct {
     float pos[3]; // position, inertial frame
     float vel[3]; // velocity, inertial frame
-    float eta[3]; // rotation, body frame
-    float eta_dot[3]; // rotation speed, body frame
+    float eta[3]; // rotation, phi(roll) theta(pitch) psi(yaw)  body frame
+    float eta_dot[3]; // rotation speed, \dot{\phi} \dot{\theta} \dot{\psi}, body frame
     float motor_rot_speed[4];
 } QRstate_t;
 
@@ -36,6 +38,8 @@ class QRdynamic {
     public:
         QRdynamic(float* pos_ref, float* pos, float* att, float delta_t); // constructor
         void update(void);
+        /* quadrotor attributes */
+        QRframe_t frame;
     private:
         /* input/output of QRdynamic */
         float dt;
@@ -43,9 +47,9 @@ class QRdynamic {
         float *QR_pos; // actual position
         float *QR_att; // actual attitude
         /* quadrotor model, input = motor rotation speeds */
-        quadrotor_model();
+        void quadrotor_model(void);
         /* quadrotor controller, output = motor rotation speeds */
-        controller_pid(float* pos_ref, float* pos, float* att, float delta_t);
+        void controller_pid(void);
         /* quadrotor states */
         QRstate_t state;
 };
