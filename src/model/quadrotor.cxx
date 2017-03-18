@@ -59,15 +59,18 @@ QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t)
 
     // init parameters
     memset(&state, 0, sizeof(state));
+    state.pos[2] = 3;
     frame.mass = 0.8; // kg
 }
-
+#include <stdio.h>
 void QRdynamic::update(void)
 {
     /* update quad_rotor_model */
     quadrotor_model();
     /* update controller */
     controller_pid();
+
+printf("pos = [ %f, %f, %f ]\n", state.pos[0], state.pos[1], state.pos[2]);
 }
 
 void QRdynamic::quadrotor_model(void)
@@ -151,9 +154,20 @@ void QRdynamic::quadrotor_model(void)
     cblas_saxpy(3, dt, a, 1, state.vel, 1); // vel = vel + a * dt
     // refresh position
     cblas_saxpy(3, dt, state.vel, 1, state.pos, 1); // pos = pos + vel * dt
+
+    // constrain of ground
+    if (state.pos[2] < 0.)
+        state.pos[2] = 0.;
+
+    // save to global
+    memcpy(QR_pos, state.pos, 3*sizeof(float));
 }
 
 void QRdynamic::controller_pid(void)
-{}
+{
+
+    /* attitude control loop */
+
+}
 
 /* End of file quadrotor.cxx */

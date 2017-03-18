@@ -40,6 +40,18 @@ Robot::Robot(const char* robot_type_name)
         ((QRframe_t*)(config.frame))->prop_chord = 0.01; // m
         ((QRframe_t*)(config.frame))->prop_blades = 2;
         ((QRframe_t*)(config.frame))->mass = 0.8; // kg
+        ((QRframe_t*)(config.frame))->I[0] = 0.0081;
+        ((QRframe_t*)(config.frame))->I[1] = 0.0;
+        ((QRframe_t*)(config.frame))->I[2] = 0.0;
+        ((QRframe_t*)(config.frame))->I[3] = 0.0;
+        ((QRframe_t*)(config.frame))->I[4] = 0.0081;
+        ((QRframe_t*)(config.frame))->I[5] = 0.0;
+        ((QRframe_t*)(config.frame))->I[6] = 0.0;
+        ((QRframe_t*)(config.frame))->I[7] = 0.0;
+        ((QRframe_t*)(config.frame))->I[8] = 0.0142;
+        ((QRframe_t*)(config.frame))->k = 0.0000542;
+        ((QRframe_t*)(config.frame))->b = 0.0000011;
+        ((QRframe_t*)(config.frame))->kd = 1.2;
 
         memset(state.pos, 0, sizeof(state.pos));
         memset(state.att, 0, sizeof(state.att));
@@ -109,7 +121,7 @@ void Robot::init(float delta_t)
 #endif
         /* init quadrotor dynamic model */
         model = new QRdynamic(ref_state.pos, state.pos, state.att, dt);
-        memcpy((QRframe_t*)(config.frame), &(((QRdynamic*)model)->frame), sizeof(QRframe_t));
+        memcpy(&(((QRdynamic*)model)->frame), (QRframe_t*)(config.frame), sizeof(QRframe_t));
 
         /* init leds */
         state.leds = 1;
