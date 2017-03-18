@@ -176,11 +176,6 @@ float limit(float x,float x1,float x2)
 void QRdynamic::controller_pid(void)
 {
 
-float QR_pos_ref[3];
-    float QR_pos[3];
-    float QR_att[3];
-    float dt;
-
     float att_ref[3];
 
     float kp_xy = 1.6;
@@ -192,8 +187,7 @@ float QR_pos_ref[3];
     float kp_psi  = 6.0;
     float kd_psi  = 2.0;
     //float frame.mass;
-    float g = 9.81;
-    float I_xx,
+    float g = 9.8;
 
     static float x_error,x_errorh,x_errord;
     static float y_error,y_errorh,y_errord;
@@ -207,7 +201,7 @@ float QR_pos_ref[3];
     float phi_acc,theta_acc,psi_acc;
 
     float u1,u2,u3,u4;
-    float f1,f2,f3,f4
+    float f[4];
 
 
     x_errorh = x_error;
@@ -269,10 +263,17 @@ float QR_pos_ref[3];
     //u2 = -f1+f3
     //u3 = -f2+f4
     //u4 = -(f1+f3)+f2+f4
-    f1 = (frame.mass*u1 - u4 - 2.0*u2)/4.0;
-    f2 = (frame.mass*u1 + u4 - 2.0*u3)/4.0;
-    f3 = (frame.mass*u1 - u4 + 2.0*u2)/4.0;
-    f4 = (frame.mass*u1 + u4 + 2.0*u3)/4.0;
+    f[0] = (frame.mass*u1 - u4 - 2.0*u2)/4.0;
+    f[1] = (frame.mass*u1 + u4 - 2.0*u3)/4.0;
+    f[2] = (frame.mass*u1 - u4 + 2.0*u2)/4.0;
+    f[3] = (frame.mass*u1 + u4 + 2.0*u3)/4.0;
+
+    for (int i  = 0; i < 4; i++)
+        state.motor_rot_speed[i] = std::sqrt(f[i]/frame.k);
+
+
+
+
 
     /* attitude control loop */
 
