@@ -163,8 +163,116 @@ void QRdynamic::quadrotor_model(void)
     memcpy(QR_pos, state.pos, 3*sizeof(float));
 }
 
+float limit(float x,float x1,float x2)
+{
+    if(x < x1)
+        return x1;
+    else if(x > x2)
+        return x2;
+    else
+        return x;
+}
+
 void QRdynamic::controller_pid(void)
 {
+
+float QR_pos_ref[3];
+    float QR_pos[3];
+    float QR_att[3];
+    float dt;
+
+    float att_ref[3];
+
+    float kp_xy = 1.6;
+    float kd_xy = 1.2;
+    float kp_z  = 5.0;
+    float kd_z  = 2.5;
+    float kp_phi_the = 8.0;
+    float kd_phi_the = 4.0;
+    float kp_psi  = 6.0;
+    float kd_psi  = 2.0;
+    //float frame.mass;
+    float g = 9.81;
+    float I_xx,
+
+    static float x_error,x_errorh,x_errord;
+    static float y_error,y_errorh,y_errord;
+    static float z_error,z_errorh,z_errord;
+    static float phi_error,phi_errorh,phi_errord;
+    static float theta_error,theta_errorh,theta_errord;
+    static float psi_error,psi_errorh,psi_errord;
+
+    float x_acc,y_acc,z_acc;
+    float x_force,y_force,z_force;
+    float phi_acc,theta_acc,psi_acc;
+
+    float u1,u2,u3,u4;
+    float f1,f2,f3,f4
+
+
+    x_errorh = x_error;
+    x_error = QR_pos_ref[0] - QR_pos[0];
+    x_errord = (x_error - x_errorh)/dt;
+    x_acc = kp_xy*x_error + kd_xy*x_errord;
+    x_acc = limit(x_acc,0,8);
+
+    y_errorh = y_error;
+    y_error = QR_pos_ref[1] - QR_pos[1];
+    y_errord = (y_error - y_errorh)/dt;
+    y_acc = kp_xy*y_error + kd_xy*y_errord;
+    y_acc = limit(y_acc,0,8);
+
+    z_errorh = z_error;
+    z_error = QR_pos_ref[2] - QR_pos_ref[2];
+    z_errord = (z_error - z_errorh)/dt;
+    z_acc = kp_z*z_error + kd_z*z_errord;
+    z_acc = limit(z_acc,0,8);
+
+    att_ref[2] = atan(x_acc/(x_acc+g));
+    att_ref[1] = atan((-y_acc*cos(att_ref[2]))/(z_acc+g));
+
+    if(att_ref[1])
+    {
+        u1 = (-y_acc)/sin(att_ref[1]);
+        u1 = limit(u1,0,25);
+    }
+    else
+    {
+        u1 = (z_acc+g)/(cos(att_ref[2])*cos(att_ref[1]));
+        u1 = limit(u1,0,25);
+    }
+
+    phi_errorh = phi_error;
+    phi_error = att_ref[1] - att_ref[1];
+    phi_errord = (phi_error - phi_errorh)/dt;
+    phi_acc = kp_phi_the*phi_error + kd_phi_the*phi_errord;
+    phi_acc = limit(phi_acc,0,4);
+
+    theta_errorh = theta_error;
+    theta_error = att_ref[2] - att_ref[2];
+    theta_errord = (theta_error - theta_errorh)/dt;
+    theta_acc = kp_phi_the*theta_error + kd_phi_the*theta_errord;
+    theta_acc = limit(theta_acc,0,4);
+
+    psi_errorh = psi_error;
+    psi_error = att_ref[0] -att_ref[0];
+    psi_errord = (psi_error - psi_errorh)/dt;
+    psi_acc = kp_psi*psi_error + kd_psi*psi_errord;
+    psi_acc = limit(psi_acc,0,4);
+
+    u2 = phi_acc;
+    u3 = theta_acc;
+    u4 = psi_acc;
+
+    //calculate equation
+    //m*u1 = f1+f2+f3+f4
+    //u2 = -f1+f3
+    //u3 = -f2+f4
+    //u4 = -(f1+f3)+f2+f4
+    f1 = (frame.mass*u1 - u4 - 2.0*u2)/4.0;
+    f2 = (frame.mass*u1 + u4 - 2.0*u3)/4.0;
+    f3 = (frame.mass*u1 - u4 + 2.0*u2)/4.0;
+    f4 = (frame.mass*u1 + u4 + 2.0*u3)/4.0;
 
     /* attitude control loop */
 
