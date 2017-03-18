@@ -64,38 +64,21 @@ endif()
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 #============== Find Dependencies ================
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
-#---- External FLTK related settings ----
-# Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
-if(UNIX AND NOT APPLE) # MacOSX use brew fltk
-    set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build")
-endif()
 # print out paths in order to check if goes wrong
 message("Project Source Dir: \"${PROJECT_SOURCE_DIR}\"")
 message("Project Binary Dir: \"${PROJECT_BINARY_DIR}\"")
-if(UNIX AND NOT APPLE) # MacOSX use brew fltk
-    message("FLTK_DIR (where the FLTKConfig.cmake file is): \"${FLTK_DIR}\"")
-endif()
+#---- External FLTK related settings ----
+# Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
+set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1/build")
+
 # find the FLTK package
 # "NO_MODULE" tells CMake to search only for the FLTKConfig file, not using
 # the FindFLTK.cmake supplied with CMake, which doesn't work with this version
 # of FLTK
-if(UNIX AND NOT APPLE)
-    find_package(FLTK REQUIRED NO_MODULE)
-elseif(APPLE)
-    find_package(FLTK REQUIRED)
-endif()
+#find_package(FLTK REQUIRED NO_MODULE) 
 find_package(OpenGL REQUIRED)
-# this file is in the same folder as FLTKConfig.cmake file
-if(UNIX AND NOT APPLE)
-    include(${FLTK_USE_FILE})
-endif()
 # gl.h and glu.h
-if(UNIX AND NOT APPLE)
-    add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
-elseif(APPLE)
-    #add_definitions(-DGL_HEADER=<OpenGL/gl.h> -DGLU_HEADER=<OpenGL/glu.h> -DGLUT_HEADER=<GLUT/glut.h>)
-    add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
-endif()
+add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
 
 #---- External CUDA related settings ----
 if(UNIX AND NOT APPLE)
@@ -118,6 +101,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 # add source directory into include path
 #   add root dir to search for header files of RAOS projects
 include_directories(${PROJECT_SOURCE_DIR}/src)
+#   add fltk dir to search for FL and GL header
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1)
 #   add cblas dir to search for cblas.h header for linear algebra
 include_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/include)
 #   add ziggurat source file to generate normal distribution random numbers
@@ -126,9 +111,7 @@ include_directories(${PROJECT_SOURCE_DIR}/3rdparty/ziggurat)
 #---- library files path settings ----
 # add library dir into lib path
 #   add fltk lib directory
-if(UNIX AND NOT APPLE)
-    link_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build/lib)
-endif()
+link_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1/build/lib)
 #   add blas and cblas lib dir
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/BLAS-3.6.0)
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/lib)

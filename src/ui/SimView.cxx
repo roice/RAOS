@@ -59,7 +59,7 @@ static void SimView_redraw(void)
     /* draw note */
     draw_notes();
     
-    glutSwapBuffers(); // using two buffers mode
+    //glutSwapBuffers(); // using two buffers mode
 
     // Use glFinish() instead of glFlush() to avoid getting many frames
     // ahead of the display (problem with some Linux OpenGL implementations...)
@@ -170,10 +170,12 @@ static void draw_notes(void) {
 }
 
 
-static void SimView_idle(void) { 
+static void SimView_idle(int) {
+    glutTimerFunc((unsigned int)(1000./60.), SimView_idle, 0); // FPS 60
     // update view
     if (agvMoving) agvMove();
     SimView_redraw();
+    glutPostRedisplay();
 }
 
 void SimView_init(int width, int height)
@@ -188,7 +190,7 @@ void SimView_init(int width, int height)
     glutReshapeFunc(SimView_reshape);
     glutDisplayFunc(SimView_redraw);
     glutVisibilityFunc(SimView_visible);
-    glutIdleFunc(SimView_idle);
+    glutTimerFunc((unsigned int)(1000./60.), SimView_idle, 0); // FPS 60
 
     /* Initialize GL stuff */
     glShadeModel(GL_FLAT);// or use GL_SMOOTH with more computation
