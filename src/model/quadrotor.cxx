@@ -183,19 +183,23 @@ float limit(float x,float x1,float x2)
 
 void QRdynamic::controller_pid(void)
 {
-
-    float att_ref[3];
+float att_ref[3] ;
 
     float kp_xy = 1.6;
-    float kd_xy = 1.2;
-    float kp_z  = 5.0;
-    float kd_z  = 2.5;
+    float kd_xy = 0.0;
+    float kp_z  = 2.0;
+    float kd_z  = 0.0;
     float kp_phi_the = 8.0;
-    float kd_phi_the = 4.0;
+    float kd_phi_the = 0.0;
     float kp_psi  = 6.0;
-    float kd_psi  = 2.0;
+    float kd_psi  = 0.0;
     //float frame.mass;
     float g = 9.8;
+
+    QR_pos_ref[0] = -1.0;
+    QR_pos_ref[1] = -1.0;
+    QR_pos_ref[2] = 3.0;
+
 
     static float x_error,x_errorh,x_errord;
     static float y_error,y_errorh,y_errord;
@@ -211,84 +215,99 @@ void QRdynamic::controller_pid(void)
     float u1,u2,u3,u4;
     float f[4];
 
+    printf("______________________________\n");
+    printf("pos_ref = [ %f, %f, %f ]\n", QR_pos_ref[0], QR_pos_ref[1], QR_pos_ref[2]);
+    printf("pos = [ %f, %f, %f ]\n", state.pos[0], state.pos[1], state.pos[2]);
 
     x_errorh = x_error;
     x_error = QR_pos_ref[0] - QR_pos[0];
     x_errord = (x_error - x_errorh)/dt;
     x_acc = kp_xy*x_error + kd_xy*x_errord;
-    x_acc = limit(x_acc,0,8);
+    x_acc = limit(x_acc,-8.0,8.0);
 
     y_errorh = y_error;
     y_error = QR_pos_ref[1] - QR_pos[1];
     y_errord = (y_error - y_errorh)/dt;
     y_acc = kp_xy*y_error + kd_xy*y_errord;
-    y_acc = limit(y_acc,0,8);
+    y_acc = limit(y_acc,-8.0,8.0);
 
     z_errorh = z_error;
-    z_error = QR_pos_ref[2] - QR_pos_ref[2];
+    z_error = QR_pos_ref[2] - QR_pos[2];
     z_errord = (z_error - z_errorh)/dt;
     z_acc = kp_z*z_error + kd_z*z_errord;
-    z_acc = limit(z_acc,0,8);
+    z_acc = limit(z_acc,-8.0,8.0);
 
-    att_ref[2] = atan(x_acc/(x_acc+g));
-    att_ref[1] = atan((-y_acc*cos(att_ref[2]))/(z_acc+g));
+    printf("pos_error:[ %lf, %lf, %lf]\n",x_error,y_error,z_error);
+    printf("pos_acc:[ %lf, %lf, %lf]\n",x_acc,y_acc,z_acc);
+
+    att_ref[2] = atan(-x_acc/(z_acc+g));
+    att_ref[1] = atan((y_acc*cos(att_ref[2]))/(z_acc+g));
 
     if(att_ref[1])
     {
-        u1 = (-y_acc)/sin(att_ref[1]);
-        u1 = limit(u1,0,25);
+        u1 = (y_acc)/sin(att_ref[1]);
+        u1 = limit(u1,-20.0,25.0);
     }
     else
     {
         u1 = (z_acc+g)/(cos(att_ref[2])*cos(att_ref[1]));
-        u1 = limit(u1,0,25);
+        u1 = limit(u1,-20.0,25.0);
     }
 
     phi_errorh = phi_error;
-    phi_error = att_ref[1] - att_ref[1];
+    phi_error = att_ref[1] - QR_att[1];
     phi_errord = (phi_error - phi_errorh)/dt;
     phi_acc = kp_phi_the*phi_error + kd_phi_the*phi_errord;
-    phi_acc = limit(phi_acc,0,4);
+    phi_acc = limit(phi_acc,-4.0,4.0);
 
     theta_errorh = theta_error;
-    theta_error = att_ref[2] - att_ref[2];
+    theta_error = att_ref[2] - QR_att[2];
     theta_errord = (theta_error - theta_errorh)/dt;
     theta_acc = kp_phi_the*theta_error + kd_phi_the*theta_errord;
-    theta_acc = limit(theta_acc,0,4);
+    theta_acc = limit(theta_acc,-4.0,4.0);
 
     psi_errorh = psi_error;
-    psi_error = att_ref[0] -att_ref[0];
+    psi_error = 0.0 - QR_att[0];
     psi_errord = (psi_error - psi_errorh)/dt;
     psi_acc = kp_psi*psi_error + kd_psi*psi_errord;
-    psi_acc = limit(psi_acc,0,4);
+    psi_acc = limit(psi_acc,-4.0,4.0);
 
     u2 = phi_acc;
     u3 = theta_acc;
     u4 = psi_acc;
 
+    printf("att_ref:[ %lf, %lf, %lf]\n",0.0,att_ref[1],att_ref[2]);
+    printf("att:[ %lf, %lf, %lf]\n",QR_att[0],QR_att[1],QR_att[2]);
+    printf("angle_acc:[ %lf, %lf, %lf]\n",phi_acc,theta_acc,psi_acc);
+
     //calculate equation
     //m*u1 = f1+f2+f3+f4
     //u2 = -f1+f3
-    //u3 = -f2+f4
+    //u3 = -f4+f2
     //u4 = -(f1+f3)+f2+f4
-    f[0] = (frame.mass*u1 - u4 - 2.0*u2)/4.0;
-    f[1] = (frame.mass*u1 + u4 - 2.0*u3)/4.0;
-    f[2] = (frame.mass*u1 - u4 + 2.0*u2)/4.0;
-    f[3] = (frame.mass*u1 + u4 + 2.0*u3)/4.0;
 
-    f[0] = 2;
-    f[1] = 2;
-    f[2] = 2;
-    f[3] = 2;
+    f[0] = (frame.mass*u1 + u4 + 2.0*u3)/4.0;
+    f[1] = (frame.mass*u1 - u4 - 2.0*u2)/4.0;
+    f[2] = (frame.mass*u1 + u4 - 2.0*u3)/4.0;
+    f[3] = (frame.mass*u1 - u4 + 2.0*u2)/4.0;
 
     for (int i  = 0; i < 4; i++)
+    {
         state.motor_rot_speed[i] = std::sqrt(f[i]/frame.k);
+    }
 
+//    printf("u1~4:[ %lf, %lf, %lf, %lf]\n",u1,u2,u3,u4);
+//    printf("rot_speed:[ %lf, %lf, %lf, %lf]\n",state.motor_rot_speed[0],state.motor_rot_speed[1],state.motor_rot_speed[2],state.motor_rot_speed[3]);
 
+//    state.motor_rot_speed[0] = 190.08;
+//    state.motor_rot_speed[1] = 190.08;
+//    state.motor_rot_speed[2] = 190.08;
+//    state.motor_rot_speed[3] = 190.08;
 
+    printf("u1~4:[ %lf, %lf, %lf, %lf]\n",u1,u2,u3,u4);
+    printf("rot_speed:[ %lf, %lf, %lf, %lf]\n",state.motor_rot_speed[0],state.motor_rot_speed[1],state.motor_rot_speed[2],state.motor_rot_speed[3]);
 
-
-    /* attitude control loop */
+    /* attitude control loop */ 
 
 }
 

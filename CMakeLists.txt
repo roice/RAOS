@@ -70,13 +70,8 @@ message("Project Binary Dir: \"${PROJECT_BINARY_DIR}\"")
 #---- External FLTK related settings ----
 # Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
 set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1/build")
-
-# find the FLTK package
-# "NO_MODULE" tells CMake to search only for the FLTKConfig file, not using
-# the FindFLTK.cmake supplied with CMake, which doesn't work with this version
-# of FLTK
-#find_package(FLTK REQUIRED NO_MODULE) 
-find_package(OpenGL REQUIRED)
+find_package(FLTK REQUIRED NO_MODULE)
+message("FLTK Include Dir: \"${FLTK_INCLUDE_DIRS}\"")
 # gl.h and glu.h
 add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
 
@@ -101,8 +96,6 @@ include_directories(${HDF5_INCLUDE_DIRS})
 # add source directory into include path
 #   add root dir to search for header files of RAOS projects
 include_directories(${PROJECT_SOURCE_DIR}/src)
-#   add fltk dir to search for FL and GL header
-include_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1)
 #   add cblas dir to search for cblas.h header for linear algebra
 include_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/include)
 #   add ziggurat source file to generate normal distribution random numbers
@@ -110,8 +103,6 @@ include_directories(${PROJECT_SOURCE_DIR}/3rdparty/ziggurat)
 
 #---- library files path settings ----
 # add library dir into lib path
-#   add fltk lib directory
-link_directories(${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1/build/lib)
 #   add blas and cblas lib dir
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/BLAS-3.6.0)
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/lib)

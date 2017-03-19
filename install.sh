@@ -30,7 +30,7 @@ sleep 1
 cd $prjtop/3rdparty/fltk-1.3.4-1
 mkdir -p build/install
 cd build
-cmake -D CMAKE_INSTALL_PREFIX=./install ..
+cmake -D OPTION_ABI_VERSION:STRING=10304 -D CMAKE_INSTALL_PREFIX=./install ..
 make
 make install
 # Compile blas
