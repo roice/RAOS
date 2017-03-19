@@ -25,14 +25,16 @@ sleep 1
 ##======== Compile 3rd Party softwares ========
 echo "Start Compiling 3d party soft ..."
 # Compile fltk
-echo "Start Compiling FLTK..."
-sleep 1
-cd $prjtop/3rdparty/fltk-1.3.3
-mkdir -p build/install
-cd build
-cmake -D CMAKE_INSTALL_PREFIX=./install ..
-make
-make install
+if [ ${SYSTEM} = "LINUX" ]; then
+    echo "Start Compiling FLTK..."
+    sleep 1
+    cd $prjtop/3rdparty/fltk-1.3.3
+    mkdir -p build/install
+    cd build
+    cmake -D CMAKE_INSTALL_PREFIX=./install ..
+    make
+    make install
+fi
 # Compile blas
 echo "Start Compiling BLAS..."
 sleep 1

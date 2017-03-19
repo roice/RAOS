@@ -24,9 +24,11 @@ sleep 2
 echo "Start cleaning ..."
 sleep 1
 # clear 3rd party software builds
-echo "Cleaning FLTK..."
-cd $prjtop/3rdparty
-rm -rf fltk-1.3.3/build
+if [ ${SYSTEM} = "LINUX" ]; then
+    echo "Cleaning FLTK..."
+    cd $prjtop/3rdparty
+    rm -rf fltk-1.3.3/build
+fi
 
 # clear blas
 echo "Cleaning BLAS..."

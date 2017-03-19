@@ -68,9 +68,14 @@ endif()
 message("Project Source Dir: \"${PROJECT_SOURCE_DIR}\"")
 message("Project Binary Dir: \"${PROJECT_BINARY_DIR}\"")
 #---- External FLTK related settings ----
-# Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
-set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build")
-find_package(FLTK REQUIRED NO_MODULE)
+if(UNIX AND NOT APPLE)
+    # Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
+    set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build")
+    # "NO_MODULE" tells CMake to search only for the FLTKConfig file, not using the FindFLTK.cmake supplied with CMake
+    find_package(FLTK REQUIRED NO_MODULE)
+elseif(APPLE)
+    find_package(FLTK REQUIRED) # use fltk installed by homebrew
+endif()
 message("FLTK Include Dir: \"${FLTK_INCLUDE_DIRS}\"")
 # gl.h and glu.h
 add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/glut.H")
