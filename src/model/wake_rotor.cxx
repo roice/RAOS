@@ -93,7 +93,7 @@ void RotorWake::maintain(const char* marker_maintain_type)
                 // calculate the position of this marker     
                 memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
                 memset(pos_marker_p, 0, sizeof(pos_marker_p));
-                rotate_vector(pos_marker_v, pos_marker_p, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j, 0, 0);
+                rotate_vector(pos_marker_v, pos_marker_p, 0, 0, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi+(-rotor_state.direction)*config.dpsi*j);
                 rotate_vector(pos_marker_p, new_marker.pos, rotor_state.att[0]*RAD2DEG, rotor_state.att[1]*RAD2DEG, rotor_state.att[2]*RAD2DEG);
                 for (int k = 0; k < 3; k++) // integrate
                     new_marker.pos[k] += vel[k]*j*(config.dpsi*M_PI/180.0)/rotor_state.Omega;
@@ -198,7 +198,7 @@ void RotorWake::marker_release(void) {
         // calculate the position of this marker     
         memcpy(new_marker.pos, rotor_state.pos, sizeof(new_marker.pos));
         memset(pos_marker_p, 0, sizeof(pos_marker_p));
-        rotate_vector(pos_marker_v, pos_marker_p, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi, 0, 0);
+        rotate_vector(pos_marker_v, pos_marker_p, 0, 0, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi);
         rotate_vector(pos_marker_p, new_marker.pos, rotor_state.att[0]*RAD2DEG, rotor_state.att[1]*RAD2DEG, rotor_state.att[2]*RAD2DEG);
         // push to wake state array
         wake_state[i]->push_back(new_marker);
@@ -256,7 +256,7 @@ void RotorWake::init_wake_geometry(void) {
             new_marker.pos[2] += z_tip;
             rotor_state.psi = -(rotor_state.direction)*(psi_rad - floor(psi_rad/(2*M_PI))*(2*M_PI))*180.0f/M_PI;
             memset(pos_marker_p, 0, sizeof(pos_marker_p));
-            rotate_vector(pos_marker_v, pos_marker_p, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi, 0, 0);
+            rotate_vector(pos_marker_v, pos_marker_p, 0, 0, 360.0/rotor_state.frame.n_blades*i+rotor_state.psi);
             rotate_vector(pos_marker_p, new_marker.pos, rotor_state.att[0]*RAD2DEG, rotor_state.att[1]*RAD2DEG, rotor_state.att[2]*RAD2DEG);
             // push to wake state array
             wake_state[i]->push_back(new_marker);

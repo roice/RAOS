@@ -3,7 +3,7 @@
 #include <string.h>
 #include "cblas.h"
 
-/* rotate a vector with angles yaw pitch roll (degree)
+/* rotate a vector with angles roll pitch yaw (degree)
  * Right-Hand(counterclockwise)
  * 
  *                 cos(yaw)  -sin(yaw)  0
@@ -22,7 +22,7 @@
  *
  *    out = R * vector + out
  */
-void rotate_vector(const float* vector, float* out, float yaw, float pitch, float roll)
+void rotate_vector(const float* vector, float* out, float roll, float pitch, float yaw)
 {
     // calculate rotation matrix
     float sin_yaw = sin(yaw*M_PI/180.0);

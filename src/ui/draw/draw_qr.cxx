@@ -49,7 +49,7 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
 	glZ = -state->pos[1];
 	glY = state->pos[2];
  	phi = state->att[0];
-	theta = -state->att[1];
+	theta = state->att[1];
 	psi = state->att[2];
 
     /* draw the quad rotor */
@@ -60,8 +60,8 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
 	 * (in terms of OpenGL X,Y,Z frame where
 	 * Euler earth axes X,Y,Z are openGl axes X,Z,-Y)
 	 */
-  	glRotatef(RAD2DEG * psi, 0.0, -1.0, 0.0);
-  	glRotatef(RAD2DEG * theta, 0.0, 0.0, 1.0);
+  	glRotatef(RAD2DEG * psi, 0.0, 1.0, 0.0);
+  	glRotatef(RAD2DEG * theta, 0.0, 0.0, -1.0);
   	glRotatef(RAD2DEG * phi, 1.0, 0.0, 0.0);
     /* draw the mast of quad rotor, indicating up/down */
     draw_qr_mast(frame->size);
@@ -78,8 +78,8 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
   	
     /* apply NASA aeroplane Euler angles standard
 	 * (same drill) */
-    glRotatef(RAD2DEG * psi, 0.0, -1.0, 0.0);
-  	glRotatef(RAD2DEG * theta, 0.0, 0.0, 1.0);
+    glRotatef(RAD2DEG * psi, 0.0, 1.0, 0.0);
+  	glRotatef(RAD2DEG * theta, 0.0, 0.0, -1.0);
   	glRotatef(RAD2DEG * phi, 1.0, 0.0, 0.0);
 
   	glEnable(GL_BLEND);

@@ -11,6 +11,7 @@
  *--------------------------------------------------------------------------
  */
 
+#include <stdio.h>
 #include <cmath>
 #include <string.h>
 #include "cblas.h"
@@ -47,6 +48,13 @@ void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, flo
     rotate_vector(v2, rpos2, att[0]*RAD2DEG, att[1]*RAD2DEG, att[2]*RAD2DEG);
     rotate_vector(v3, rpos3, att[0]*RAD2DEG, att[1]*RAD2DEG, att[2]*RAD2DEG);
     rotate_vector(v4, rpos4, att[0]*RAD2DEG, att[1]*RAD2DEG, att[2]*RAD2DEG);
+
+#if 0
+    printf("rpos1 = [ %f, %f, %f ]\n", rpos1[0], rpos1[1], rpos1[2]);
+    printf("rpos2 = [ %f, %f, %f ]\n", rpos2[0], rpos2[1], rpos2[2]);
+    printf("rpos3 = [ %f, %f, %f ]\n", rpos3[0], rpos3[1], rpos3[2]);
+    printf("rpos4 = [ %f, %f, %f ]\n", rpos4[0], rpos4[1], rpos4[2]);
+#endif
 }
 
 QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t)
@@ -60,17 +68,16 @@ QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t)
     // init parameters
     memset(&state, 0, sizeof(state));
     state.pos[2] = 3;
+    state.eta[0] = 45.*M_PI/180.;
     frame.mass = 0.8; // kg
 }
-#include <stdio.h>
+
 void QRdynamic::update(void)
 {
     /* update quad_rotor_model */
     quadrotor_model();
     /* update controller */
     controller_pid();
-
-printf("pos = [ %f, %f, %f ]\n", state.pos[0], state.pos[1], state.pos[2]);
 }
 
 void QRdynamic::quadrotor_model(void)
@@ -161,6 +168,7 @@ void QRdynamic::quadrotor_model(void)
 
     // save to global
     memcpy(QR_pos, state.pos, 3*sizeof(float));
+    memcpy(QR_att, state.eta, 3*sizeof(float));
 }
 
 float limit(float x,float x1,float x2)
@@ -267,6 +275,11 @@ void QRdynamic::controller_pid(void)
     f[1] = (frame.mass*u1 + u4 - 2.0*u3)/4.0;
     f[2] = (frame.mass*u1 - u4 + 2.0*u2)/4.0;
     f[3] = (frame.mass*u1 + u4 + 2.0*u3)/4.0;
+
+    f[0] = 2;
+    f[1] = 2;
+    f[2] = 2;
+    f[3] = 2;
 
     for (int i  = 0; i < 4; i++)
         state.motor_rot_speed[i] = std::sqrt(f[i]/frame.k);
