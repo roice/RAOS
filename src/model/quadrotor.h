@@ -36,7 +36,7 @@ typedef struct {
 
 class QRdynamic {
     public:
-        QRdynamic(float* pos_ref, float* pos, float* att, float delta_t); // constructor
+        QRdynamic(float* pos_ref, float* pos, float* att, float delta_t, const char*, const char*, QRframe_t*); // constructor
         void update(void);
         /* quadrotor attributes */
         QRframe_t frame;

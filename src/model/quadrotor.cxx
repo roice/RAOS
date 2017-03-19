@@ -57,7 +57,7 @@ void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, flo
 #endif
 }
 
-QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t)
+QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t, const char* robot_name, const char* ctl_name, QRframe_t* frm)
 {
     // save parameters and addr
     dt = delta_t;

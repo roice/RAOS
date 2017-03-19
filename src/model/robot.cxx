@@ -12,10 +12,10 @@
 #include "model/helicopter.h" // for HLframe_t
 #include "model/quadrotor.h" // for QRframe_t and euler rotation functions
 
-Robot::Robot(const char* robot_type_name)
+Robot::Robot(const char* robot_type, const char* robot_name, const char* controller_name)
 { 
     /******* Helicopter *******/
-    if (strcmp(robot_type_name, "helicopter") == 0) {
+    if (strcmp(robot_type, "helicopter") == 0) {
         config.type = helicopter;
 #ifdef RAOS_FEATURE_WAKES
         config.wake = on; // calculate wake by default
@@ -29,7 +29,7 @@ Robot::Robot(const char* robot_type_name)
         memset(state.att, 0, sizeof(state.att));
     }
     /******* QuadRotor *******/
-    else if (strcmp(robot_type_name, "quadrotor") == 0) {
+    else if (strcmp(robot_type, "quadrotor") == 0) {
         config.type = quadrotor;
 #ifdef RAOS_FEATURE_WAKES
         config.wake = on; // calculate wake by default
@@ -120,7 +120,7 @@ void Robot::init(float delta_t)
         }
 #endif
         /* init quadrotor dynamic model */
-        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt);
+        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt, "Super Bee", "PID", (QRframe_t*)(config.frame));
         memcpy(&(((QRdynamic*)model)->frame), (QRframe_t*)(config.frame), sizeof(QRframe_t));
 
         /* init leds */
