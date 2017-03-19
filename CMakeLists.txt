@@ -69,7 +69,7 @@ message("Project Source Dir: \"${PROJECT_SOURCE_DIR}\"")
 message("Project Binary Dir: \"${PROJECT_BINARY_DIR}\"")
 #---- External FLTK related settings ----
 # Set FLTK_DIR to the directory which contains FLTKConfig.cmake file
-set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.4-1/build")
+set(FLTK_DIR "${PROJECT_SOURCE_DIR}/3rdparty/fltk-1.3.3/build")
 find_package(FLTK REQUIRED NO_MODULE)
 message("FLTK Include Dir: \"${FLTK_INCLUDE_DIRS}\"")
 # gl.h and glu.h

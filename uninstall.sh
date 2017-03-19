@@ -26,7 +26,7 @@ sleep 1
 # clear 3rd party software builds
 echo "Cleaning FLTK..."
 cd $prjtop/3rdparty
-rm -rf fltk-1.3.4-1/build
+rm -rf fltk-1.3.3/build
 
 # clear blas
 echo "Cleaning BLAS..."

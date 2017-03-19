@@ -27,10 +27,10 @@ echo "Start Compiling 3d party soft ..."
 # Compile fltk
 echo "Start Compiling FLTK..."
 sleep 1
-cd $prjtop/3rdparty/fltk-1.3.4-1
+cd $prjtop/3rdparty/fltk-1.3.3
 mkdir -p build/install
 cd build
-cmake -D OPTION_ABI_VERSION:STRING=10304 -D CMAKE_INSTALL_PREFIX=./install ..
+cmake -D CMAKE_INSTALL_PREFIX=./install ..
 make
 make install
 # Compile blas
