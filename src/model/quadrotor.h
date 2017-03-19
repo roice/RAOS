@@ -34,6 +34,25 @@ typedef struct {
     float motor_rot_speed[4];
 } QRstate_t;
 
+typedef enum {
+    QRController_PID,
+    QRController_ADRC,
+} QRController_t;
+
+typedef struct {
+    float P_ALT;    // altitude, P
+    float P_VEL;    // altitude velocity (U), P
+    float I_VEL;
+    float D_VEL;
+    float P_POS;    // position, P
+    float P_POSR;   // position velocity (NE), P
+    float I_POSR;
+    float D_POSR;
+    float P_MAG;    // heading, P
+    float I_MAG;
+    float D_MAG;
+} QRController_PID_Params_t;
+
 class QRdynamic {
     public:
         QRdynamic(float* pos_ref, float* pos, float* att, float delta_t, const char*, const char*, QRframe_t*); // constructor
@@ -41,6 +60,7 @@ class QRdynamic {
         /* quadrotor attributes */
         QRframe_t frame;
     private:
+        void configure(const char*, const char*, QRframe_t*);
         /* input/output of QRdynamic */
         float dt;
         float *QR_pos_ref; // reference position
@@ -49,6 +69,8 @@ class QRdynamic {
         /* quadrotor model, input = motor rotation speeds */
         void quadrotor_model(void);
         /* quadrotor controller, output = motor rotation speeds */
+        QRController_t QRcontroller_name;
+        void* QRcontroller_params;
         void controller_pid(void);
         /* quadrotor states */
         QRstate_t state;
