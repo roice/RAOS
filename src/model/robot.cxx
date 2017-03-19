@@ -5,7 +5,6 @@
  * Date: 2016-03-08 create this file (RAOS)
  */
 
-#include <stdio.h>
 #include <vector>
 #include <stdlib.h>
 #include <string.h> // memset
@@ -13,10 +12,10 @@
 #include "model/helicopter.h" // for HLframe_t
 #include "model/quadrotor.h" // for QRframe_t and euler rotation functions
 
-Robot::Robot(const char* robot_type, const char* robot_name, const char* controller_name)
+Robot::Robot(const char* robot_type_name)
 { 
     /******* Helicopter *******/
-    if (strcmp(robot_type, "helicopter") == 0) {
+    if (strcmp(robot_type_name, "helicopter") == 0) {
         config.type = helicopter;
 #ifdef RAOS_FEATURE_WAKES
         config.wake = on; // calculate wake by default
@@ -30,14 +29,29 @@ Robot::Robot(const char* robot_type, const char* robot_name, const char* control
         memset(state.att, 0, sizeof(state.att));
     }
     /******* QuadRotor *******/
-    else if (strcmp(robot_type, "quadrotor") == 0) {
+    else if (strcmp(robot_type_name, "quadrotor") == 0) {
         config.type = quadrotor;
 #ifdef RAOS_FEATURE_WAKES
         config.wake = on; // calculate wake by default
 #endif
-        /* create quadrotor dynamic model */ 
         config.frame = (QRframe_t*)malloc(sizeof(QRframe_t));
-        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt, robot_name, controller_name, (QRframe_t*)(config.frame));
+        ((QRframe_t*)(config.frame))->size = 0.45;
+        ((QRframe_t*)(config.frame))->prop_radius = 0.15; // m
+        ((QRframe_t*)(config.frame))->prop_chord = 0.01; // m
+        ((QRframe_t*)(config.frame))->prop_blades = 2;
+        ((QRframe_t*)(config.frame))->mass = 0.8; // kg
+        ((QRframe_t*)(config.frame))->I[0] = 0.0081;
+        ((QRframe_t*)(config.frame))->I[1] = 0.0;
+        ((QRframe_t*)(config.frame))->I[2] = 0.0;
+        ((QRframe_t*)(config.frame))->I[3] = 0.0;
+        ((QRframe_t*)(config.frame))->I[4] = 0.0081;
+        ((QRframe_t*)(config.frame))->I[5] = 0.0;
+        ((QRframe_t*)(config.frame))->I[6] = 0.0;
+        ((QRframe_t*)(config.frame))->I[7] = 0.0;
+        ((QRframe_t*)(config.frame))->I[8] = 0.0142;
+        ((QRframe_t*)(config.frame))->k = 0.0000542;
+        ((QRframe_t*)(config.frame))->b = 0.0000011;
+        ((QRframe_t*)(config.frame))->kd = 1.2;
 
         memset(state.pos, 0, sizeof(state.pos));
         memset(state.att, 0, sizeof(state.att));
@@ -46,8 +60,6 @@ Robot::Robot(const char* robot_type, const char* robot_name, const char* control
     /******* Other *******/
     else {// cannot recognize robot type
         // Exit program
-        printf("Error: Cannot recognize robot type, The robot type can be: \n        (1) \"helicopter\" \n        (2) \"quadrotor\"\n");
-        exit(0);
     }
 }
 
@@ -106,7 +118,10 @@ void Robot::init(float delta_t)
             for (int i = 0; i < 4; i++) // init four rotor wakes
                 wakes.at(i)->init(); 
         }
-#endif 
+#endif
+        /* init quadrotor dynamic model */
+        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt);
+        memcpy(&(((QRdynamic*)model)->frame), (QRframe_t*)(config.frame), sizeof(QRframe_t));
 
         /* init leds */
         state.leds = 1;

@@ -40,7 +40,7 @@ void SimModel_init(void)
 #endif
 
     /* create & init robot */
-    Robot* new_robot = new Robot("quadrotor", "Super Bee", "PID");
+    Robot* new_robot = new Robot("quadrotor");
     new_robot->ref_state.pos[0] = 0.5;
     new_robot->ref_state.pos[1] = 4.5;
     new_robot->ref_state.pos[2] = 2.0;

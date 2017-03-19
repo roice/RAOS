@@ -57,7 +57,7 @@ void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, flo
 #endif
 }
 
-QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t, const char* robot_name, const char* ctl_name, QRframe_t* frm)
+QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t)
 {
     // save parameters and addr
     dt = delta_t;
@@ -65,13 +65,10 @@ QRdynamic::QRdynamic(float* pos_ref, float* pos, float* att, float delta_t, cons
     QR_pos = pos;
     QR_att = att;
 
-    // configure quadrotor frame
-    configure(robot_name, ctl_name, frm);
-
     // init parameters
     memset(&state, 0, sizeof(state));
     state.pos[2] = 3;
-    state.eta[2] = -45.*M_PI/180.;
+    state.eta[0] = 45.*M_PI/180.;
     frame.mass = 0.8; // kg
 }
 
@@ -80,9 +77,7 @@ void QRdynamic::update(void)
     /* update quad_rotor_model */
     quadrotor_model();
     /* update controller */
-    if (QRcontroller_name == QRController_PID);
-        //controller_pid();
-    else if (QRcontroller_name == QRController_ADRC);
+    controller_pid();
 }
 
 void QRdynamic::quadrotor_model(void)
@@ -106,15 +101,15 @@ void QRdynamic::quadrotor_model(void)
     };
     // body frame to inertial frame
     float R[9] = {
-        std::cos(state.eta[1])*std::cos(state.eta[2]),
-        std::sin(state.eta[0])*std::sin(state.eta[1])*std::cos(state.eta[2]) - std::cos(state.eta[0])*std::sin(state.eta[2]),
-        std::cos(state.eta[2])*std::sin(state.eta[1])*std::cos(state.eta[0]) + std::sin(state.eta[0])*std::sin(state.eta[2]),
-        std::cos(state.eta[1])*std::sin(state.eta[2]),
-        std::sin(state.eta[1])*std::sin(state.eta[0])*std::sin(state.eta[2]) + std::cos(state.eta[0])*std::cos(state.eta[2]),
-        std::cos(state.eta[0])*std::sin(state.eta[1])*std::sin(state.eta[2]) - std::sin(state.eta[0])*std::cos(state.eta[2]),
-        -std::sin(state.eta[1]),
-        std::sin(state.eta[0])*std::cos(state.eta[1]),
-        std::cos(state.eta[0])*std::cos(state.eta[1])
+        std::cos(state.eta[0])*std::cos(state.eta[2]) - std::cos(state.eta[1])*std::sin(state.eta[0])*std::sin(state.eta[2]),
+        -std::cos(state.eta[2])*std::sin(state.eta[0]) - std::cos(state.eta[0])*std::cos(state.eta[1])*std::sin(state.eta[2]),
+        std::sin(state.eta[1])*std::sin(state.eta[2]),
+        std::cos(state.eta[1])*std::cos(state.eta[2])*std::sin(state.eta[0]) + std::cos(state.eta[0])*std::sin(state.eta[2]),
+        std::cos(state.eta[0])*std::cos(state.eta[1])*std::cos(state.eta[2]) - std::sin(state.eta[0])*std::sin(state.eta[2]),
+        -std::cos(state.eta[2])*std::sin(state.eta[1]),
+        std::sin(state.eta[0])*std::sin(state.eta[1]),
+        std::cos(state.eta[0])*std::sin(state.eta[1]),
+        std::cos(state.eta[1])
     };
     // compute acceleration a, given T_B, R, friction coefficient kd, translation velocity in inertial frame (state.vel)
     float T[3] = {0., 0., 0.}; // thrust, inertial frame
@@ -125,12 +120,6 @@ void QRdynamic::quadrotor_model(void)
         0. + (T[1] + Fd[1])/frame.mass,
         -9.8 + (T[2] + Fd[2])/frame.mass
     };
-
-printf("R =   [ %f, %f, %f \n        %f, %f, %f \n        %f, %f, %f ]\n", R[0], R[1], R[2], R[3], R[4], R[5], R[6], R[7], R[8]);
-printf("eta = [ %f, %f, %f ]\n", state.eta[0], state.eta[1], state.eta[2]);
-printf("T_B = [ %f, %f, %f ]\n", T_B[0], T_B[1], T_B[2]);
-printf("T =   [ %f, %f, %f ]\n", T[0], T[1], T[2]);
-printf("a =   [ %f, %f, %f ]\n", a[0], a[1], a[2]);
 
     // compute w (omega), given etadot_to_w matrix and rotation angle (eta), rotational speed (eta_dot)
     float etadot_to_w[9] = {
@@ -194,11 +183,6 @@ float limit(float x,float x1,float x2)
 
 void QRdynamic::controller_pid(void)
 {
-    
-
-
-
-
 float att_ref[3] ;
 
     float kp_xy = 1.6;
@@ -315,70 +299,16 @@ float att_ref[3] ;
 //    printf("u1~4:[ %lf, %lf, %lf, %lf]\n",u1,u2,u3,u4);
 //    printf("rot_speed:[ %lf, %lf, %lf, %lf]\n",state.motor_rot_speed[0],state.motor_rot_speed[1],state.motor_rot_speed[2],state.motor_rot_speed[3]);
 
-    //state.motor_rot_speed[0] = 190.08;
-    //state.motor_rot_speed[1] = 190.08;
-    //state.motor_rot_speed[2] = 190.08;
-    //state.motor_rot_speed[3] = 190.08;
+//    state.motor_rot_speed[0] = 190.08;
+//    state.motor_rot_speed[1] = 190.08;
+//    state.motor_rot_speed[2] = 190.08;
+//    state.motor_rot_speed[3] = 190.08;
 
     printf("u1~4:[ %lf, %lf, %lf, %lf]\n",u1,u2,u3,u4);
     printf("rot_speed:[ %lf, %lf, %lf, %lf]\n",state.motor_rot_speed[0],state.motor_rot_speed[1],state.motor_rot_speed[2],state.motor_rot_speed[3]);
 
     /* attitude control loop */ 
 
-}
-
-void QRdynamic::configure(const char* robot_name, const char* controller_name, QRframe_t* frm)
-{
-    if (strcmp(robot_name, "Micro Bee") == 0) {
-        frm->size = 0.22; // m
-        frm->prop_radius = 0.0725; // m
-        frm->prop_chord = 0.01; // m
-        frm->mass = 0.1; // kg
-        frm->I[0] = 0.0081;
-        frm->I[1] = 0.0;
-        frm->I[2] = 0.0;
-        frm->I[3] = 0.0;
-        frm->I[4] = 0.0081;
-        frm->I[5] = 0.0;
-        frm->I[6] = 0.0;
-        frm->I[7] = 0.0;
-        frm->I[8] = 0.0142;
-        frm->k = 0.0000542;
-        frm->b = 0.0000011;
-        frm->kd = 1.2;
-    }
-    else { // Super Bee by default
-        if (strcmp(robot_name, "Super Bee") != 0)
-            printf("Warning: quadrotor robot name \'%s\' not recognized, use the configuration of Super Bee by default.\n", robot_name);
-        frm->size = 0.45; // m
-        frm->prop_radius = 0.15; // m
-        frm->prop_chord = 0.016; // m
-        frm->mass = 0.8; // kg
-        frm->I[0] = 0.0081;
-        frm->I[1] = 0.0;
-        frm->I[2] = 0.0;
-        frm->I[3] = 0.0;
-        frm->I[4] = 0.0081;
-        frm->I[5] = 0.0;
-        frm->I[6] = 0.0;
-        frm->I[7] = 0.0;
-        frm->I[8] = 0.0142;
-        frm->k = 0.0000542;
-        frm->b = 0.0000011;
-        frm->kd = 1.2;
-    };
-
-    if (strcmp(controller_name, "PID") == 0)
-        QRcontroller_name = QRController_PID;
-    else if (strcmp(controller_name, "ADRC") == 0)
-        QRcontroller_name = QRController_ADRC;
-    else {
-        printf("Warning: QR controller name \'%s\' not recognized, use PID by default.\n", controller_name);
-        QRcontroller_name = QRController_PID;
-    }
-
-    // copy frm (external) to frame (class private)
-    memcpy(&frame, frm, sizeof(QRframe_t));
 }
 
 /* End of file quadrotor.cxx */
