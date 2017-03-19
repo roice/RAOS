@@ -12,8 +12,12 @@
 #include "model/helicopter.h" // for HLframe_t
 #include "model/quadrotor.h" // for QRframe_t and euler rotation functions
 
-Robot::Robot(const char* robot_type, const char* robot_name, const char* controller_name)
-{ 
+Robot::Robot(const char* robot_type, const char* robot_name, const char* controller_name, float delta_t)
+{
+    // save args
+    dt = delta_t;
+  
+    /* =============== Create Robot ================== */
     /******* Helicopter *******/
     if (strcmp(robot_type, "helicopter") == 0) {
         config.type = helicopter;
@@ -61,13 +65,8 @@ Robot::Robot(const char* robot_type, const char* robot_name, const char* control
     else {// cannot recognize robot type
         // Exit program
     }
-}
 
-void Robot::init(float delta_t)
-{
-    // save args
-    dt = delta_t;
-    
+    /* ================ Init Robot ================= */
     /******* Helicopter *******/
     if (config.type == helicopter) {
 #ifdef RAOS_FEATURE_WAKES
@@ -120,7 +119,7 @@ void Robot::init(float delta_t)
         }
 #endif
         /* init quadrotor dynamic model */
-        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt, "Super Bee", "PID", (QRframe_t*)(config.frame));
+        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt, robot_name, controller_name, (QRframe_t*)(config.frame));
         memcpy(&(((QRdynamic*)model)->frame), (QRframe_t*)(config.frame), sizeof(QRframe_t));
 
         /* init leds */

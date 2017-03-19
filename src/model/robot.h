@@ -43,8 +43,7 @@ typedef struct {
 
 class Robot {
     public:
-        Robot(const char*, const char*, const char*); // constructor
-        void init(float delta_t);
+        Robot(const char*, const char*, const char*, float); // constructor
         void update(void);
         void destroy(void);
 
