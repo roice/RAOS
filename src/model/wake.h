@@ -9,9 +9,10 @@
 #define WAKE_H
 
 #include "model/SimModel.h"
+#include "model/environment.h"
 
 void WakesInit(std::vector<Robot*>*);
-void WakesUpdate(std::vector<Robot*>*, const char*, SimState_t*); // update all of the wakes in the environment
+void WakesUpdate(std::vector<Robot*>*, const char*, SimState_t*, SimEnvInfo*); // update all of the wakes in the environment
 void WakesFinish(void);
 
 // for plume puffs

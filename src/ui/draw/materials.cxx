@@ -43,6 +43,10 @@ GLfloat chlorine_ambuse[] =   { 0.0, 1.0, 0.0, 0.3 };
 GLfloat chlorine_specular[] = { 0, 0, 0, 1.0 };
 GLfloat chlorine_shininess[] = { 0 };
 
+GLfloat rose_ambuse[] =   { 0.93, 0.35, 0.45, 0.1 };
+GLfloat rose_specular[] = { 0, 0, 0, 1.0 };
+GLfloat rose_shininess[] = { 0 };
+
 /* functions to create different materials */
 static void create_land_material(void)
 {
@@ -116,6 +120,15 @@ static void create_chlorine_material(void)
     glEndList();
 }
 
+static void create_rose_material(void)
+{
+    glNewList(ROSE_MAT, GL_COMPILE);
+      glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, rose_ambuse);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, rose_specular);
+      glMaterialfv(GL_FRONT, GL_SHININESS, rose_shininess);
+    glEndList();
+}
+
 void create_materials(void)
 {
     create_land_material();
@@ -126,6 +139,7 @@ void create_materials(void)
     create_smoke_material();
     create_vortice_material();
     create_chlorine_material();
+    create_rose_material();
 }
 
 // changeable smoke material

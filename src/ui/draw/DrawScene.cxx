@@ -22,6 +22,7 @@
 #ifdef RAOS_FEATURE_WAKES
     #include "ui/draw/draw_wake.h" // wake visual
 #endif
+#include "ui/draw/draw_ref_point.h"
 #include "ui/draw/materials.h" // create material lists
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
@@ -67,6 +68,7 @@ void DrawScene(void)
     pthread_mutex_lock(sim_get_data_lock());
 
     /* draw quadrotor */
+    draw_ref_point(SimModel_get_robots());
     draw_robots(SimModel_get_robots());
 
 #ifdef RAOS_FEATURE_WAKES

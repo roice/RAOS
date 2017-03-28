@@ -11,6 +11,7 @@
 #include "model/error_cuda.h"
 #include "model/plume.h" // for wake-induced velocity computation of plume puffs
 #include "model/SimModel.h"
+#include "model/environment.h"
 
 #define PI 3.14159265358979323846
 
@@ -27,6 +28,14 @@ int* dev_idx_end_marker_fila; // on-device array ...
 FarWakeState_t* far_wakes;
 FarWakeState_t* dev_far_wakes; // on-device array containing the far wake states of rotors
 #endif
+// wind
+typedef struct {
+    float v[3];
+} Wake_FreeStreamVector_t;
+Wake_FreeStreamVector_t* free_stream;
+Wake_FreeStreamVector_t* dev_free_stream; // on-device ... free stream vector at robots' position
+int* idx_end_marker_robot; // endpoint of vortices of robots
+int* dev_idx_end_marker_robot;
 
 // vel += biot savert induction from segement a-b to position p
 __device__ float3 biot_savart_induction(VortexMarker_t a, VortexMarker_t b, float3 p, float3 vel)
@@ -177,7 +186,7 @@ Note:
     blockDim must equal to tile_size*row_sgmts
     gridDim == (num_markers + tile_size - 1) / tile_size
  */
-__global__ void CalculateVelofMarkers(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers, int tile_size, int row_sgmts)
+__global__ void CalculateVelofMarkers(VortexMarker_t* markers, int* idx_end, int num_fila, int num_markers, int tile_size, int row_sgmts, Wake_FreeStreamVector_t* wind, int* idx_end_robot, int num_robot)
 {
     extern __shared__ VortexMarker_t tile_markers[];
 
@@ -230,9 +239,14 @@ __global__ void CalculateVelofMarkers(VortexMarker_t* markers, int* idx_end, int
         }
         // Save the result in global memory for the integration step.
 /*TODO:*/
-        markers[row].vel[0] = vel.x + 0.5;
-        markers[row].vel[1] = vel.y;
-        markers[row].vel[2] = vel.z; 
+        for (i = 0; i < num_robot; i++) {
+            if (row <= idx_end_robot[i]) {
+                markers[row].vel[0] = vel.x + wind[i].v[0];
+                markers[row].vel[1] = vel.y + wind[i].v[1];
+                markers[row].vel[2] = vel.z + wind[i].v[2];
+                break;
+            }
+        }
     }
 }
 
@@ -392,7 +406,7 @@ __global__ void CalculateIndVelofFarWakeBC(VortexMarker_t* markers, int num_mark
 /* update all of the rotor wakes in the environment
  * this routine will traverse all of the robot instances
  * and update all of the Lagrangian markers for all robots */
-void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, SimState_t* sim_state)
+void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, SimState_t* sim_state, SimEnvInfo* sim_env_info)
 {
     int idx_robot, idx_rotor, idx_blade;
     int num_blade = 0;
@@ -419,6 +433,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, Si
                 num_blade++;
             }
         }
+        idx_end_marker_robot[idx_robot] = addr_cp_markers-1; // the address of the last element of a robot
     }// traversed all rotor wakes and got total number of markers
 #if defined(WAKE_IGE)
     for(idx_robot = 0; idx_robot < robots->size(); idx_robot++) {
@@ -434,6 +449,9 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, Si
         }
     }
 #endif
+    // get wind vectors
+    for (int i = 0; i < robots->size(); i++)
+        sim_env_info->measure_wind(robots->at(i)->state.pos, free_stream[i].v);
 
     // Phase 2: copy array wake_markers & idx_wake_markers to GPU's dev_wake_markers
     HANDLE_ERROR( cudaMemcpy(dev_wake_markers, wake_markers, 
@@ -444,6 +462,10 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, Si
     HANDLE_ERROR( cudaMemcpy(dev_far_wakes, far_wakes, 
                 addr_cp_rotors*sizeof(FarWakeState_t), cudaMemcpyHostToDevice) );
 #endif
+    HANDLE_ERROR( cudaMemcpy(dev_free_stream, free_stream, 
+                robots->size()*sizeof(Wake_FreeStreamVector_t), cudaMemcpyHostToDevice) );
+    HANDLE_ERROR( cudaMemcpy(dev_idx_end_marker_robot, idx_end_marker_robot,
+                robots->size()*sizeof(int), cudaMemcpyHostToDevice) );
     
     // Phase 3: parallel computing
     //  determine threads per block and blocks number, at present addr_cp_markers contains total num of markers
@@ -460,7 +482,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, Si
     blocks = (addr_cp_markers + p - 1) / p;
     //  Note: here omitted checks for max number of blocks, since in RAO problem the vortex markers
     //        rarely exceeds 65535*threads.
-    CalculateVelofMarkers<<<blocks, threads, (threads)*sizeof(VortexMarker_t)>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers, p, q);
+    CalculateVelofMarkers<<<blocks, threads, (threads)*sizeof(VortexMarker_t)>>>(dev_wake_markers, dev_idx_end_marker_fila, num_blade, addr_cp_markers, p, q, dev_free_stream, dev_idx_end_marker_robot, robots->size());
     err = cudaGetLastError();
     if (err != cudaSuccess)
         printf("Error: %s\n", cudaGetErrorString(err));
@@ -486,7 +508,7 @@ void WakesUpdate(std::vector<Robot*>* robots, const char* integration_scheme, Si
     HANDLE_ERROR( cudaMemcpy(dev_wake_markers_mediate, dev_wake_markers, 
                 addr_cp_markers*sizeof(VortexMarker_t), cudaMemcpyDeviceToDevice) );
     blocks = (addr_cp_markers + p - 1) / p;
-    CalculateVelofMarkers<<<blocks, threads, (threads)*sizeof(VortexMarker_t)>>>(dev_wake_markers_mediate, dev_idx_end_marker_fila, num_blade, addr_cp_markers, p, q);
+    CalculateVelofMarkers<<<blocks, threads, (threads)*sizeof(VortexMarker_t)>>>(dev_wake_markers_mediate, dev_idx_end_marker_fila, num_blade, addr_cp_markers, p, q, dev_free_stream, dev_idx_end_marker_robot, robots->size());
     err = cudaGetLastError();
     if (err != cudaSuccess)
         printf("Error: %s\n", cudaGetErrorString(err));
@@ -629,6 +651,20 @@ void WakesInit(std::vector<Robot*>* robots)
     HANDLE_ERROR( cudaMalloc((void**)&dev_idx_end_marker_fila,
         max_num_fila*sizeof(*dev_idx_end_marker_fila)) );
 
+    // allocate host memory containing wind vectors at robots' positions
+    HANDLE_ERROR( cudaHostAlloc((void**)&free_stream,
+        robots->size()*sizeof(Wake_FreeStreamVector_t), cudaHostAllocDefault) );
+    // allocate device memory
+    HANDLE_ERROR( cudaMalloc((void**)&dev_free_stream,
+        robots->size()*sizeof(Wake_FreeStreamVector_t)) );
+    
+    // allocate host memory containing index to identify which robot the vortices belong to
+    HANDLE_ERROR( cudaHostAlloc((void**)&idx_end_marker_robot,
+        robots->size()*sizeof(*idx_end_marker_robot), cudaHostAllocDefault) );
+    // allocate device memory
+    HANDLE_ERROR( cudaMalloc((void**)&dev_idx_end_marker_robot,
+        robots->size()*sizeof(*dev_idx_end_marker_robot)) );
+
 #if defined(WAKE_BC_FAR)
     // allocate host memory containing the far wake states
     HANDLE_ERROR( cudaHostAlloc((void**)&far_wakes,
@@ -645,9 +681,19 @@ void WakesFinish(void)
     // free device memory
     HANDLE_ERROR( cudaFree(dev_idx_end_marker_fila) );
     HANDLE_ERROR( cudaFree(dev_wake_markers) );
+    HANDLE_ERROR( cudaFree(dev_free_stream) );
+    HANDLE_ERROR( cudaFree(dev_idx_end_marker_robot) );
+#if defined(WAKE_BC_FAR)
+    HANDLE_ERROR( cudaFree(dev_far_wakes) );
+#endif
     // free host memory
     HANDLE_ERROR( cudaFreeHost(idx_end_marker_fila) );
     HANDLE_ERROR( cudaFreeHost(wake_markers) );
+    HANDLE_ERROR( cudaFreeHost(free_stream) );
+    HANDLE_ERROR( cudaFreeHost(idx_end_marker_robot) );
+#if defined(WAKE_BC_FAR)
+    HANDLE_ERROR( cudaFreeHost(far_wakes) );
+#endif
 }
 
 /*************************************************************************/

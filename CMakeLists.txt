@@ -57,8 +57,9 @@ if(APPLE)
     message("${BoldRed}WARNING: Wake simulation feature will not supported.${ColourReset}") 
 elseif(UNIX AND NOT APPLE)
     message("${BoldGreen}Compile on UNIX with full features.${ColourReset}")
-    set(RAOS_FEATURE_WAKES "enable")
-    add_definitions(-DRAOS_FEATURE_WAKES)
+    #set(RAOS_FEATURE_WAKES "enable")
+    #add_definitions(-DRAOS_FEATURE_WAKES)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 endif()
 
 #$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
@@ -103,6 +104,8 @@ include_directories(${HDF5_INCLUDE_DIRS})
 include_directories(${PROJECT_SOURCE_DIR}/src)
 #   add cblas dir to search for cblas.h header for linear algebra
 include_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/include)
+#   add lapack dir to search for lapacke.h header for solving linear equations
+include_directories(${PROJECT_SOURCE_DIR}/3rdparty/lapack-3.7.0/LAPACKE/include)
 #   add ziggurat source file to generate normal distribution random numbers
 include_directories(${PROJECT_SOURCE_DIR}/3rdparty/ziggurat)
 
@@ -111,6 +114,8 @@ include_directories(${PROJECT_SOURCE_DIR}/3rdparty/ziggurat)
 #   add blas and cblas lib dir
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/BLAS-3.6.0)
 link_directories(${PROJECT_SOURCE_DIR}/3rdparty/blas/CBLAS/lib)
+#   add lapack lib dir
+link_directories(${PROJECT_SOURCE_DIR}/3rdparty/lapack-3.7.0/build/lib)
 #   libgfortran
 if(APPLE)
     link_directories(/usr/local/lib/gcc/6/)
@@ -142,22 +147,24 @@ if(RAOS_FEATURE_WAKES)
         src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx 
         src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
         src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
-        src/ui/draw/draw_wake.cxx)
+        src/ui/draw/draw_wake.cxx src/ui/draw/draw_ref_point.cxx)
 else()
     add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
         src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx 
         src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
         src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
+        src/ui/draw/draw_ref_point.cxx
         )
 endif()
 
 # make a library from method files
 add_library(${LIB_METHOD_NAME} src/method/method.cxx
-        src/method/gas_dist_mapping.cxx
+        src/method/gas_dist_mapping.cxx src/method/hover_measure.cxx
         )
 # compile main file
 add_executable(${PRJ_NAME} src/SimMain.cxx src/SimThread.cxx src/SimConfig.cxx src/SimRecord.cxx
-        src/common/math/rotation.cxx)
+        src/model/environment.cxx
+        src/common/math/rotation.cxx src/common/math/linalg.cxx)
 add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME} ${LIB_METHOD_NAME})
 
 #---- start linking ----
@@ -174,6 +181,9 @@ target_link_libraries(${PRJ_NAME} fltk)
 target_link_libraries(${PRJ_NAME} fltk_gl)
 # link external image library
 target_link_libraries(${PRJ_NAME} fltk_images)
+# link external lapack library
+target_link_libraries(${PRJ_NAME} lapacke)
+target_link_libraries(${PRJ_NAME} lapack)
 # link external blas library
 target_link_libraries(${PRJ_NAME} cblas)
 target_link_libraries(${PRJ_NAME} blas)

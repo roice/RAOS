@@ -11,6 +11,7 @@
 
 typedef enum {
     METHOD_GAS_DIST_MAPPING = 0, 
+    METHOD_HOVER_MEASURE = 1,
     METHOD_ITEM_COUNT,
     METHOD_NONE
 } methodName_e;

@@ -47,6 +47,14 @@ sleep 1
 cd $prjtop/3rdparty/blas/CBLAS
 make
 mv lib/cblas_*.a lib/libcblas.a
+# Compile lapack
+echo "Start Compiling LAPACK..."
+sleep 1
+cd $prjtop/3rdparty/lapack-3.7.0
+mkdir build
+cd build
+cmake -DLAPACKE=ON ..
+make
 
 ##======== Compile RAOS ========
 cd $prjtop

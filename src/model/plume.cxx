@@ -8,6 +8,7 @@
 #include <vector>
 #include <time.h> // for random seed
 #include "model/plume.h"
+#include "model/environment.h"
 #include "SimConfig.h"
 #include "ziggurat.h" // for normal distribution number
 #include "SimModel.h"
@@ -25,6 +26,7 @@ class FilaModel
     public:
         std::vector<FilaState_t> state; // state of fila, a list
         PlumeConfig_t config; // plume model settings
+        SimEnvInfo* PL_env_info;
 
         /* parameters for ziggurat method */
         float fn[128];
@@ -32,8 +34,10 @@ class FilaModel
         float wn[128];
         unsigned int seed;
 
-        void init(void) // plume initialization
+        void init(SimEnvInfo* sim_env_info) // plume initialization
         {
+            PL_env_info = sim_env_info;
+
             // init settings
             SimConfig_t* sim_config = SimConfig_get_configs();
             config.pps = sim_config->source.pps;
@@ -62,16 +66,14 @@ class FilaModel
             if (!sim_state->wake_initialized) return;
 #endif
 
-            float wind_x, wind_y, wind_z;
+            float wind[3];
             float vm_x, vm_y, vm_z;
 
         /* Step 1: update positions of fila */
             for (int i = 0; i < state.size(); i++) // for each fila
             {
-                // calculate wind
-                wind_x = 0.5;
-                wind_y = 0;
-                wind_z = 0;
+                // get wind
+                PL_env_info->measure_wind(state.at(i).pos, wind);
                 // calculate centerline relative dispersion
                 /*
                 vm_x = (drand48() - 0.5);
@@ -82,9 +84,9 @@ class FilaModel
                 vm_y = 0.3*r4_nor ( seed, kn, fn, wn );
                 vm_z = 0.3*r4_nor ( seed, kn, fn, wn );
                 // calculate pos increment
-                state.at(i).pos[0] += (wind_x+vm_x + state.at(i).vel[0]) * sim_state->dt;
-                state.at(i).pos[1] += (wind_y+vm_y + state.at(i).vel[1]) * sim_state->dt;
-                state.at(i).pos[2] += (wind_z+vm_z + state.at(i).vel[2]) * sim_state->dt;
+                state.at(i).pos[0] += (wind[0]+vm_x + state.at(i).vel[0]) * sim_state->dt;
+                state.at(i).pos[1] += (wind[1]+vm_y + state.at(i).vel[1]) * sim_state->dt;
+                state.at(i).pos[2] += (wind[2]+vm_z + state.at(i).vel[2]) * sim_state->dt;
                 if (state.at(i).pos[2] < 0.0)
                     state.at(i).pos[2] = -state.at(i).pos[2];
             }
@@ -144,11 +146,11 @@ class FilaModel
 FilaModel *fila = NULL;
 #endif
 
-void plume_init(void)
+void plume_init(SimEnvInfo* sim_env_info)
 {
 #if defined(USE_FILAMENT_MODEL)
     fila = new FilaModel();
-    fila->init();
+    fila->init(sim_env_info);
 #endif
 }
 

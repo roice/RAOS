@@ -42,6 +42,11 @@ cd $prjtop/3rdparty/blas/CBLAS
 make clean
 rm lib/*.a
 
+# clear LAPACK
+echo "Cleaning LAPACK..."
+cd $prjtop/3rdparty/lapack-3.7.0
+rm -rf build
+
 # clear RAOS builds
 echo "Cleaning RAOS..."
 cd $prjtop

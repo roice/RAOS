@@ -23,6 +23,8 @@
 #define PI 3.14159265
 #endif /*  */
 
+#define DRAW_QR_TYPE    0  // 1 for + type, 0 for x type
+
 /* graphics stuff */
 static double RAD2DEG = 180 / PI;
 
@@ -31,7 +33,6 @@ static double RAD2DEG = 180 / PI;
 static void draw_motor(double);
 static void draw_rotor(double);
 static void draw_qr_model(RobotState_t*, QRframe_t*, int shadow);
-static void draw_qr_mast(float);
 
 /* draw the quad rotor, simple planar */
 void draw_qr(RobotState_t* state, QRframe_t* frame)
@@ -62,9 +63,7 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
 	 */
   	glRotatef(RAD2DEG * psi, 0.0, 1.0, 0.0);
   	glRotatef(RAD2DEG * theta, 0.0, 0.0, -1.0);
-  	glRotatef(RAD2DEG * phi, 1.0, 0.0, 0.0);
-    /* draw the mast of quad rotor, indicating up/down */
-    draw_qr_mast(frame->size);
+  	glRotatef(RAD2DEG * phi, 1.0, 0.0, 0.0); 
 
   	draw_qr_model(state, frame, 0);
       	
@@ -97,8 +96,8 @@ static void draw_ring(double inner_radius, double outer_radius)
 {
   	double x1 = 0;
   	double x2 = 0;
-  	double z1 = inner_radius;;
-  	double z2 = outer_radius;;
+  	double z1 = inner_radius;
+  	double z2 = outer_radius;
   	double k;
   	double newx1, newz1, newx2, newz2;
      
@@ -146,6 +145,7 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
 
     glPushAttrib(GL_LIGHTING_BIT);
 
+#if DRAW_QR_TYPE // + type
    /* motor struts */
     glCallList(shadow?SHADOW_MAT:STEEL_MAT);
   	glBegin(GL_LINES);
@@ -198,6 +198,60 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
   	glTranslatef(0.0, 0.0, -qr_strut_r);
   	draw_rotor(qr_prop_r);
   	glPopMatrix();
+#else
+    /* motor struts */
+    glCallList(shadow?SHADOW_MAT:STEEL_MAT);
+  	glBegin(GL_LINES);
+  	glVertex3f(-qr_strut_r/1.41421356, 0.0, qr_strut_r/1.41421356);
+  	glVertex3f(qr_strut_r/1.41421356, 0.0, -qr_strut_r/1.41421356);
+
+  	glVertex3f(-qr_strut_r/1.41421356, 0.0, -qr_strut_r/1.41421356);
+  	glVertex3f(qr_strut_r/1.41421356, 0.0, qr_strut_r/1.41421356);
+  	glEnd();
+
+	/*  motors */
+    qr_motor_s = qr_prop_r*0.24;// calculate motor size
+    glPushMatrix();
+  	glTranslatef(qr_strut_r/1.41421356, 0.0, -qr_strut_r/1.41421356);
+  	draw_motor(qr_motor_s);
+  	glPopMatrix();
+
+  	glPushMatrix();
+  	glTranslatef(-qr_strut_r/1.41421356, 0.0, -qr_strut_r/1.41421356);
+  	draw_motor(qr_motor_s);
+  	glPopMatrix();
+
+  	glPushMatrix();
+  	glTranslatef(-qr_strut_r/1.41421356, 0.0, qr_strut_r/1.41421356);
+  	draw_motor(qr_motor_s);
+  	glPopMatrix();
+
+  	glPushMatrix();
+  	glTranslatef(qr_strut_r/1.41421356, 0.0, qr_strut_r/1.41421356);
+  	draw_motor(qr_motor_s);
+  	glPopMatrix();
+
+	/* 4 rotor covers (propeller tip locus)*/
+  	glPushMatrix();
+  	glTranslatef(qr_strut_r/1.41421356, 0.0, -qr_strut_r/1.41421356);
+  	draw_rotor(qr_prop_r);
+  	glPopMatrix();
+
+  	glPushMatrix();
+  	glTranslatef(-qr_strut_r/1.41421356, 0.0, -qr_strut_r/1.41421356);
+  	draw_rotor(qr_prop_r);
+  	glPopMatrix();
+
+  	glPushMatrix();
+  	glTranslatef(-qr_strut_r/1.41421356, 0.0, qr_strut_r/1.41421356);
+  	draw_rotor(qr_prop_r);
+  	glPopMatrix();
+
+  	glPushMatrix();
+  	glTranslatef(qr_strut_r/1.41421356, 0.0, qr_strut_r/1.41421356);
+  	draw_rotor(qr_prop_r);
+  	glPopMatrix();
+#endif
 
 #if 1
 	/* outer protective cover */
@@ -235,6 +289,7 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
   	glEnd();
 #endif
 
+#if 0
     /* "led" blinks, actually one propeller blinks */    
 	if (state->leds & 0x0001 && !shadow) 
     {// turn on led (actually one motor)
@@ -247,19 +302,28 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
         }glPopMatrix();
         glEnable(GL_LIGHTING);
 	}
-  	
-    glPopAttrib();
-}
+#endif
 
-static void draw_qr_mast(float qrsize)
-{
+
+    /* draw the mast of quad rotor, indicating up/down */
     glDisable(GL_LIGHTING);
-    glColor3f(1.0, 0.0, 0.0); /* red */
+    glColor3f(0.0, 1.0, 0.0); /* green */
   	glBegin(GL_LINES);
   	glVertex3f(0.0, 0.0, 0.0);
-  	glVertex3f(0.0, qrsize/2, 0.0);
+  	glVertex3f(0.0, qr_strut_r, 0.0);
   	glEnd();
     glEnable(GL_LIGHTING);
+
+    /* draw the head of quad rotor, indicating forward direction, North, Y-axis */
+    glDisable(GL_LIGHTING);
+    glColor3f(0.0, 0.0, 1.0); /* blue */
+  	glBegin(GL_LINES);
+  	glVertex3f(0.0, 0.0, 0.0);
+  	glVertex3f(0, 0., -qr_strut_r*2);
+  	glEnd();
+    glEnable(GL_LIGHTING);
+
+    glPopAttrib();
 }
 
 /* End of draw_qr.cxx */

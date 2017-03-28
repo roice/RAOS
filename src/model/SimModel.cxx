@@ -24,6 +24,8 @@ static std::vector<Robot*> robots; // pointer array of robot instances
 
 static SimState_t sim_state;
 
+static SimEnvInfo* sim_env_info;
+
 #define ESTABLISH_WAKE_DT_DIVIDE 18.0
 
 void SimModel_init(void)
@@ -39,15 +41,15 @@ void SimModel_init(void)
     sim_state.dt = configs->common.dt; // 50 Hz
 #endif
 
+    /* create environment class */
+    sim_env_info = new SimEnvInfo(configs->common.dt);
+
     /* create & init robot */
-    Robot* new_robot = new Robot("quadrotor", "Super Bee", "PID", configs->common.dt);
-    new_robot->ref_state.pos[0] = 0.5;
-    new_robot->ref_state.pos[1] = 4.5;
-    new_robot->ref_state.pos[2] = 2.0;
+    Robot* new_robot = new Robot("quadrotor", "Micro Bee", "PID", configs->common.dt, sim_env_info);
     robots.push_back(new_robot);
 
     /* init plume */
-    plume_init();
+    plume_init(sim_env_info);
 
 #ifdef RAOS_FEATURE_WAKES
     /* init parallelization of rotor wakes computation */
@@ -57,7 +59,8 @@ void SimModel_init(void)
 #endif
 
     /* init method */
-    method_init(METHOD_GAS_DIST_MAPPING); // gas distribution mapping 
+    //method_init(METHOD_HOVER_MEASURE);
+    method_init(METHOD_GAS_DIST_MAPPING); // gas distribution mapping
 }
 
 void SimModel_update(void) {
@@ -72,7 +75,7 @@ void SimModel_update(void) {
         robots.at(i)->update();
 #ifdef RAOS_FEATURE_WAKES
     /* update rotor wakes */
-    WakesUpdate(&robots, "Euler", &sim_state);
+    WakesUpdate(&robots, "Euler", &sim_state, sim_env_info);
 
     /* update plume */
     WakesIndVelatPlumePuffsUpdate(&robots, plume_get_fila_state());
@@ -130,6 +133,9 @@ void SimModel_destroy(void)
         }
         robots.clear();
     }
+    // free dynamic memory in sim_env_info
+    sim_env_info->destroy();
+    delete sim_env_info;
 }
 
 SimState_t* SimModel_get_sim_state(void)

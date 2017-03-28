@@ -9,16 +9,17 @@
 
 #include <vector>
 #include "model/SimModel.h"
+#include "model/environment.h"
 
 
 #define USE_FILAMENT_MODEL // use filament plume model
 
-void plume_init(void);
+void plume_init(SimEnvInfo*);
 void plume_update(SimState_t*);
 void plume_destroy(void);
 
 #if defined(USE_FILAMENT_MODEL)
-#define MAX_NUM_PUFFS 10000
+#define MAX_NUM_PUFFS 100
 typedef struct {
     float pos[3];
     float vel[3];

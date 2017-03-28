@@ -12,8 +12,9 @@
 #include "model/robot.h"
 #include "model/helicopter.h" // for HLframe_t
 #include "model/quadrotor.h" // for QRframe_t and euler rotation functions
+#include "model/environment.h"
 
-Robot::Robot(const char* robot_type, const char* robot_name, const char* controller_name, float delta_t)
+Robot::Robot(const char* robot_type, const char* robot_name, const char* controller_name, float delta_t, SimEnvInfo* sim_env_info)
 {
     // save args
     dt = delta_t;
@@ -31,7 +32,10 @@ Robot::Robot(const char* robot_type, const char* robot_name, const char* control
         ((HLframe_t*)(config.frame))->main_prop_chord = 0.01; // chord
         
         memset(state.pos, 0, sizeof(state.pos));
+        memset(state.vel, 0, sizeof(state.vel));
+        memset(state.acc, 0, sizeof(state.acc));
         memset(state.att, 0, sizeof(state.att));
+        memset(state.att_vel, 0, sizeof(state.att_vel));
     }
     /******* QuadRotor *******/
     else if (strcmp(robot_type, "quadrotor") == 0) {
@@ -41,10 +45,13 @@ Robot::Robot(const char* robot_type, const char* robot_name, const char* control
 #endif
         config.frame = (QRframe_t*)malloc(sizeof(QRframe_t));
         /* init quadrotor dynamic model */
-        model = new QRdynamic(ref_state.pos, state.pos, state.att, dt, robot_name, controller_name, (QRframe_t*)(config.frame));
         memset(state.pos, 0, sizeof(state.pos));
+        memset(state.vel, 0, sizeof(state.vel));
+        memset(state.acc, 0, sizeof(state.acc));
         memset(state.att, 0, sizeof(state.att));
+        memset(state.att_vel, 0, sizeof(state.att_vel));
         memset(ref_state.pos, 0, sizeof(ref_state.pos));
+        model = new QRdynamic(ref_state.pos, state.pos, state.vel, state.acc, state.att, state.att_vel, dt, robot_name, controller_name, (QRframe_t*)(config.frame), sim_env_info, state.wind, state.wind_est_incl, state.wind_est_leso); 
     }
     /******* Other *******/
     else {// cannot recognize robot type
@@ -113,9 +120,7 @@ Robot::Robot(const char* robot_type, const char* robot_name, const char* control
     }
 }
 
-void Robot::update(void) {
-    /* Save record */
-    record.push_back(state);
+void Robot::update(void) { 
 
     /******* Helicopter *******/
     if (config.type == helicopter) {
@@ -146,7 +151,10 @@ void Robot::update(void) {
     /******* Other *******/
     else {
         // Exit program
-    } 
+    }
+
+    /* Save record */
+    record.push_back(state);
 }
 
 void Robot::destroy(void) {
@@ -161,6 +169,8 @@ void Robot::destroy(void) {
     }
 #endif
     if (config.type == quadrotor) {
+        delete ((QRdynamic*) model)->estimator_wind_incl;
+        delete ((QRdynamic*) model)->estimator_wind_leso;
         delete ((QRdynamic*) model);
     }
     record.clear();
