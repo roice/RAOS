@@ -642,7 +642,7 @@ void QRestimator_INCL::f_inc(float norm_e_prj) {
     float alpha = std::asin(norm_e_prj)*180./M_PI;
     float strength = 0.00086*alpha*alpha + 0.08794*alpha + 0.06383;
     for (int i = 0; i < 2; i++)
-        v[i] = strength*e_proj[i]/norm_e_prj;;
+        v[i] = strength*e_proj[i]/norm_e_prj;
 }
 
 QRestimator_LESO::QRestimator_LESO(float* pos, float* vel, float* acc, float*att, float* omega, float delta_t)
