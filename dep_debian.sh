@@ -4,6 +4,7 @@
 #
 # Author: Roice (LUO Bing)
 # Date:   2014-11-25 Create this file
+#	  2017-07-02 Modify this file to adapt Debian Stretch (9.0)
 
 #!/bin/sh
 
@@ -52,25 +53,25 @@ apt-get install fontconfig
 # FreeType
 apt-get install libfreetype6 libfreetype6-dev
 # GLPK
-apt-get install libglpk36 libglpk-dev
+apt-get install libglpk40 libglpk-dev
 # gl2ps
-apt-get install libgl2ps0 libgl2ps-dev
+apt-get install libgl2ps1 libgl2ps-dev
 # gnuplot
 apt-get install gnuplot
 # GraphicsMagick++
-apt-get install libgraphicsmagick++3 libgraphicsmagick++1-dev
+apt-get install libgraphicsmagick-q16-3 libgraphicsmagick++1-dev
 # HDF5
-apt-get install libhdf5-8 libhdf5-dev
+apt-get install libhdf5-100 libhdf5-dev
 # LLVM
 apt-get install llvm
 # OpenGL
 apt-get install freeglut3 freeglut3-dev libgtkglext1 x11proto-gl-dev
 # Qhull
-apt-get install libqhull6 libqhull-dev
+apt-get install libqhull7 libqhull-dev
 # QRUPDATE
 apt-get install libqrupdate1 libqrupdate-dev
 # QScintilla
-apt-get install libqscintilla2-11 libqscintilla2-dev
+apt-get install libqscintilla2-dev
 # Qt
 apt-get install libqtcore4 libqt4-network libqtgui4
 # SuiteSparse
