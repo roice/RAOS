@@ -41,10 +41,10 @@ void QRCalculateAllRotorPos(const float* pos, const float* att, float strut, flo
     float v4[3] = {0.0, -strut, 0.0};
 #else
     // shape: x
-    float v1[3] = {strut/1.41421356, strut/1.41421356, 0.0};
-    float v2[3] = {-strut/1.41421356, strut/1.41421356, 0.0};
-    float v3[3] = {-strut/1.41421356, -strut/1.41421356, 0.0};
-    float v4[3] = {strut/1.41421356, -strut/1.41421356, 0.0};
+    float v1[3] = {strut/(float)1.41421356, strut/(float)1.41421356, 0.0};
+    float v2[3] = {-strut/(float)1.41421356, strut/(float)1.41421356, 0.0};
+    float v3[3] = {-strut/(float)1.41421356, -strut/(float)1.41421356, 0.0};
+    float v4[3] = {strut/(float)1.41421356, -strut/(float)1.41421356, 0.0};
 #endif
 
     rotate_vector(v1, rpos1, att[0]*RAD2DEG, att[1]*RAD2DEG, att[2]*RAD2DEG);
@@ -365,7 +365,7 @@ void QRdynamic::quadrotor_controller_pid(void)
     /*  Phase 3: Yaw, heading control */
     float err_yaw = QR_yaw_ref - QR_att[2]; // ref = 0. (North)
     float err_yaw_sign;
-    if (abs(err_yaw) > M_PI) {
+    if (std::abs(err_yaw) > M_PI) {
         if (err_yaw > M_PI)
             err_yaw_sign = -1.;
         else
