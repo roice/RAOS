@@ -25,6 +25,8 @@ apt-get install autoconf
 apt-get install automake
 # Libtool
 apt-get install libtool
+# Cmake
+apt-get install cmake
 
 #======== obtaining the dependencies OCTAVE require ========
 #-------- Build Dependencies --------
@@ -78,3 +80,7 @@ apt-get install libqtcore4 libqt4-network libqtgui4
 apt-get install libsuitesparse-dev
 # zlib
 apt-get install zlib1g zlib1g-dev
+# libboost
+apt-get install libboost-dev
+# libeigen
+apt-get install libeigen3-dev
