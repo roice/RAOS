@@ -28,7 +28,9 @@ echo "Start Compiling 3d party soft ..."
 if [ ${SYSTEM} = "LINUX" ]; then
     echo "Start Compiling FLTK..."
     sleep 1
-    cd $prjtop/3rdparty/fltk-1.3.3
+    cd $prjtop/3rdparty
+    tar xzvf fltk-1.3.4-1-source.tar.gz
+    cd fltk-1.3.4-1
     mkdir -p build/install
     cd build
     cmake -D CMAKE_INSTALL_PREFIX=./install ..
@@ -41,12 +43,17 @@ sleep 1
 cd $prjtop/3rdparty/blas/BLAS-3.6.0
 make
 mv blas_*.a libblas.a
+rm ./*.o  # cleanup
 # Compile cblas
 echo "Start Compiling CBLAS..."
 sleep 1
 cd $prjtop/3rdparty/blas/CBLAS
 make
 mv lib/cblas_*.a lib/libcblas.a
+#   cleanup
+rm ./src/*.o
+rm ./testing/*.o
+rm ./testing/x*
 # Compile lapack
 echo "Start Compiling LAPACK..."
 sleep 1
@@ -57,6 +64,8 @@ cmake -DLAPACKE=ON ..
 make
 
 ##======== Compile RAOS ========
+echo "Start Compiling RAOS..."
+sleep 1
 cd $prjtop
 mkdir build
 cd build

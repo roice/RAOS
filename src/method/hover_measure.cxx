@@ -11,6 +11,7 @@
 
 bool hover_measure_init(void)
 {
+    return true;
 }
 void hover_measure_update(SimState_t* sim_state)
 {

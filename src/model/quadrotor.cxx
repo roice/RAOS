@@ -208,9 +208,9 @@ void QRdynamic::quadrotor_model(void)
     float Fd[3] = {0., 0., 0.};
     cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, R, 3, Fd_B, 1, 1.0, Fd, 1); // Fd B to I
     float a[3] = {
-        0. + (T[0] + Fd[0])/frame.mass,
-        0. + (T[1] + Fd[1])/frame.mass,
-        -9.8 + (T[2] + Fd[2])/frame.mass
+        static_cast<float>(0. + (T[0] + Fd[0])/frame.mass),
+        static_cast<float>(0. + (T[1] + Fd[1])/frame.mass),
+        static_cast<float>(-9.8 + (T[2] + Fd[2])/frame.mass)
     };
 
     // compute w (omega), given etadot_to_w matrix and rotation angle (eta), rotational speed (eta_dot)
@@ -453,10 +453,10 @@ void QRdynamic::quadrotor_controller_pid(void)
                 -1, 1, 1, -1,
                 1, -1, 1, -1 };
     
-    float f[4] = {u[0]*frame.mass,
-                  u[1]*frame.mass/frame.size/2.,
-                  u[2]*frame.mass/frame.size/2.,
-                  u[3]*frame.mass/frame.b*frame.k /* how to determine this? */ };
+    float f[4] = {static_cast<float>(u[0]*frame.mass),
+                  static_cast<float>(u[1]*frame.mass/frame.size/2.),
+                  static_cast<float>(u[2]*frame.mass/frame.size/2.),
+                  static_cast<float>(u[3]*frame.mass/frame.b*frame.k) /* how to determine this? */ };
     solve_linear_equations(4, 1, A, f, f);
     for (int i = 0; i < 4; i++) // the rotor cannot rotate inversely
         f[i] = f[i]>0?f[i]:0;
@@ -709,7 +709,7 @@ void QRestimator_LESO::update(void)
         (float)(std::pow(QR_omega[0]*scale_motor_value,2)+std::pow(QR_omega[1]*scale_motor_value,2)+std::pow(QR_omega[2]*scale_motor_value,2)+std::pow(QR_omega[3]*scale_motor_value,2)) };  
     //printf("thrust_U_B = [ %f, %f, %f ]\n", thrust_U_B[0], thrust_U_B[1], thrust_U_B[2]);
     float thrust_U0 = 2.2059;
-    float thrust_B[3] = {0., 0., thrust_U_B[2]*9.8/thrust_U0};
+    float thrust_B[3] = {0., 0., static_cast<float>(thrust_U_B[2]*9.8/thrust_U0)};
     float thrust[3] = {0};
     cblas_sgemv(CblasRowMajor, CblasNoTrans, 3, 3, 1.0, R_BI, 3, thrust_B, 1, 1.0, thrust, 1); // B to I
     // kappa
@@ -730,9 +730,9 @@ void QRestimator_LESO::update(void)
     // v = m * R_B^I * [ 0, 1/c_y, 0 ] * R_I^B * a_v
     //                 [ 0, 0, 1/c_z ]
     // u = qr_speed - v 
-    float c[9] = { 1./c_x, 0., 0.,
-                   0., 1./c_y, 0.,
-                   0., 0., 1./c_z};
+    float c[9] = { static_cast<float>(1./c_x), 0., 0.,
+                   0., static_cast<float>(1./c_y), 0.,
+                   0., 0., static_cast<float>(1./c_z)};
     float c_B[9] = {0};
     cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, 3, 3, 3, 1.0, R_BI, 3, c, 3, 0.0, c_B, 3); // B to I
     float c_BI[9] = {0};

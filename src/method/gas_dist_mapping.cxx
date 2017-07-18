@@ -73,10 +73,14 @@ void GasDistMapping::waypoint_update(Robot* robot, SimState_t* sim_state)
     }
 }
 
-GasDistMapping *gdm;
+GasDistMapping *gdm = NULL;
 bool gas_dist_mapping_init(void)
 {
     gdm = new GasDistMapping();
+    if(gdm)
+        return true;
+    else
+        return false;
 }
 void gas_dist_mapping_update(SimState_t* sim_state)
 {

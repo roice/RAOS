@@ -39,10 +39,10 @@ static void draw_arena_basic(void)
 
     /* draw Ground */
     // calculate the four vertex of ground
-    GLfloat va[3] = {config->arena.w/2.0, 0, -config->arena.l/2.0},
-            vb[3] = {-config->arena.w/2.0, 0, -config->arena.l/2.0},
-            vc[3] = {-config->arena.w/2.0, 0, config->arena.l/2.0},
-            vd[3] = {config->arena.w/2.0, 0, config->arena.l/2.0};
+    GLfloat va[3] = {static_cast<GLfloat>(config->arena.w/2.0), 0, static_cast<GLfloat>(-config->arena.l/2.0)},
+            vb[3] = {static_cast<GLfloat>(-config->arena.w/2.0), 0, static_cast<GLfloat>(-config->arena.l/2.0)},
+            vc[3] = {static_cast<GLfloat>(-config->arena.w/2.0), 0, static_cast<GLfloat>(config->arena.l/2.0)},
+            vd[3] = {static_cast<GLfloat>(config->arena.w/2.0), 0, static_cast<GLfloat>(config->arena.l/2.0)};
     glPushMatrix();
     glTranslatef(0, -0.02, 0); // not 0 to avoid conflict with other objs
     glPushAttrib(GL_LIGHTING_BIT);
