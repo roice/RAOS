@@ -58,7 +58,7 @@ elseif(UNIX AND NOT APPLE)
     SET (CMAKE_C_FLAGS_RELEASE          "-O4 -DNDEBUG")
     SET (CMAKE_C_FLAGS_RELWITHDEBINFO   "-O2 -g")
     SET (CMAKE_CXX_COMPILER             "/usr/bin/clang++")
-    SET (CMAKE_CXX_FLAGS                "-Wall -std=c++11")
+    SET (CMAKE_CXX_FLAGS                "-Wall")
     SET (CMAKE_CXX_FLAGS_DEBUG          "-g")
     SET (CMAKE_CXX_FLAGS_MINSIZEREL     "-Os -DNDEBUG")
     SET (CMAKE_CXX_FLAGS_RELEASE        "-O4 -DNDEBUG")
@@ -73,6 +73,8 @@ endif()
 if (RAOS_FEATURE_WAKES)
     add_definitions(-DRAOS_FEATURE_WAKES)
 endif()
+#   random lib uses c++11 standard
+set (CMAKE_CXX_STANDARD 11)
 #   begin creating project
 project(${PRJ_NAME})
 
@@ -93,7 +95,7 @@ add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/
 #---- External CUDA related settings ----
 find_package(CUDA REQUIRED)
 # nvcc flags
-#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
+set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
 #---- External HDF5 related, for data recording
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
 include_directories(${HDF5_INCLUDE_DIRS})
