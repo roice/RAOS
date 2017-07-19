@@ -65,6 +65,8 @@ static void* sim_loop(void* args)
     SimSaveData();
     // delete events, free memory...
     SimModel_destroy();
+
+    return NULL;
 }
 
 bool sim_start(void)
