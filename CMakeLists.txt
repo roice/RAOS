@@ -127,55 +127,62 @@ link_directories(${PROJECT_SOURCE_DIR}/3rdparty/lapack-3.7.0/build/lib)
 #---- start compiling ----
 set(LIB_UI_NAME ui)
 set(LIB_MODEL_NAME model) # models
-set(LIB_METHOD_NAME method) # methods
+#set(LIB_METHOD_NAME method) # methods
 # make a library from quadrotor model files
-if(RAOS_FEATURE_WAKES)
-    cuda_add_library(${LIB_MODEL_NAME}
-        src/model/SimModel.cxx
-        src/model/plume.cxx
-        src/model/wake_rotor.cxx src/model/wake.cu
-        src/model/robot.cxx src/model/quadrotor.cxx
-        3rdparty/ziggurat/ziggurat.cpp)
-else()
-    add_library(${LIB_MODEL_NAME}
-        src/model/SimModel.cxx
-        src/model/plume.cxx
-        src/model/robot.cxx src/model/quadrotor.cxx
-        3rdparty/ziggurat/ziggurat.cpp)
-endif()
+#if(RAOS_FEATURE_WAKES)
+#    cuda_add_library(${LIB_MODEL_NAME}
+#        src/model/SimModel.cxx
+#        src/model/plume.cxx
+#        src/model/wake_rotor.cxx src/model/wake.cu
+#        src/model/robot.cxx src/model/quadrotor.cxx
+#        3rdparty/ziggurat/ziggurat.cpp)
+#else()
+add_library(${LIB_MODEL_NAME}
+    src/model/RAOS_model.cxx
+    src/model/model_wind_uniform.cxx )
+#        src/model/SimModel.cxx
+#        src/model/plume.cxx
+#        src/model/robot.cxx src/model/quadrotor.cxx
+#        3rdparty/ziggurat/ziggurat.cpp)
+#endif()
 
 # make a library from ui files
-if(RAOS_FEATURE_WAKES)
-    add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
-        src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx
-        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
-        src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
-        src/ui/draw/draw_wake.cxx src/ui/draw/draw_ref_point.cxx)
-else()
-    add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
-        src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx
-        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
-        src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
-        src/ui/draw/draw_ref_point.cxx
+#if(RAOS_FEATURE_WAKES)
+#    add_library(${LIB_UI_NAME} src/ui/SimUI.cxx src/ui/SimView.cxx src/ui/agv.cxx
+#        src/ui/draw/DrawScene.cxx src/ui/draw/materials.cxx
+#        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
+#        src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
+#        src/ui/draw/draw_wake.cxx src/ui/draw/draw_ref_point.cxx)
+#else()
+add_library(${LIB_UI_NAME}
+    src/ui/RAOS_UI.cxx src/ui/RAOS_view.cxx src/ui/agv.cxx
+    src/ui/draw/draw_scene.cxx src/ui/draw/materials.cxx
+    src/ui/draw/draw_arena.cxx
+#        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
+#        src/ui/draw/draw_plume.cxx
+#        src/ui/draw/draw_ref_point.cxx
         )
-endif()
+#endif()
 
 # make a library from method files
-add_library(${LIB_METHOD_NAME} src/method/method.cxx
-        src/method/gas_dist_mapping.cxx src/method/hover_measure.cxx
-        )
+#add_library(${LIB_METHOD_NAME} src/method/method.cxx
+#        src/method/gas_dist_mapping.cxx src/method/hover_measure.cxx
+#        )
 # compile main file
-add_executable(${PRJ_NAME} src/SimMain.cxx src/SimThread.cxx src/SimConfig.cxx src/SimRecord.cxx
-        src/model/environment.cxx
-        src/common/math/rotation.cxx src/common/math/linalg.cxx)
-add_dependencies(${PRJ_NAME} ${LIB_MODEL_NAME} ${LIB_UI_NAME} ${LIB_METHOD_NAME})
+add_executable(${PRJ_NAME}
+    src/main.cxx
+    src/RAOS_config.cxx
+    #src/model/environment.cxx
+    #src/common/math/rotation.cxx src/common/math/linalg.cxx
+    )
+add_dependencies(${PRJ_NAME} ${LIB_UI_NAME} ${LIB_MODEL_NAME} ${LIB_METHOD_NAME})
 
 #---- start linking ----
 # Note: the former line depends on the next line
-# link model library created above
-target_link_libraries(${PRJ_NAME} ${LIB_MODEL_NAME})
 # link GUI library created above
 target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
+# link model library created above
+target_link_libraries(${PRJ_NAME} ${LIB_MODEL_NAME})
 # link method library created above
 target_link_libraries(${PRJ_NAME} ${LIB_METHOD_NAME})
 # link external FLTK library

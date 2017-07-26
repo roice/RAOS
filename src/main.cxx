@@ -4,11 +4,12 @@
  * Author: Roice (LUO Bing)
  * Date: 2014-11-21 create this file (previous fgcsgdm)
  *       2016-02-01 create this file (RAOS)
+ *       2017-07-19 modify this file for RAOS v2.0
  */
 
 #include "FL/Fl.H"
-#include "ui/SimUI.h" // control panel and GL view
-#include "SimConfig.h" // settings
+#include "ui/RAOS_UI.h" // control panel and GL view
+#include "RAOS_config.h" // RAOS settings
 
 /***************************************************************/
 /**************************** MAIN *****************************/
@@ -17,18 +18,18 @@
 int main(int argc, char **argv) 
 {
     /* initialize sim settings */
-    SimConfig_restore(); 
+    RAOS_config_restore(); 
     
-    // Create a window for simulation
-    SimUI ui(800, 600, "Robot Active Olfaction Simulator");
+    // Create a window to display simulation result
+    new RAOS_UI(800, 600, "Robot Active Olfaction Simulator");
     
     // Run
     Fl::run();
 
     // save configs before closing
-    SimConfig_save();
+    RAOS_config_save();
     
     return 0;
 }
 
-/* End of SimMain.cxx */
+/* End of main.cxx */

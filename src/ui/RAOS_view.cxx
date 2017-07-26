@@ -4,31 +4,31 @@
  *
  * This file implements the classes of the view displaying for 3D
  * Robot Active Olfaction using OpenGL lib.
- * This file is included by SimUI.cxx, and the classes are
+ * This file is included by RAOS_UI.cxx, and the classes are
  * integrated into the FLTK UI.
  *
  * Author: Roice (LUO Bing)
  * Date: 2016-02-23 create this file
  */
 
-/* functions of class SimView which implements glut callbacks in SimUI.cxx */
+/* functions of class RAOS_view which implements glut callbacks in RAOS_UI.cxx */
 
 #include GLUT_HEADER
 #include GLU_HEADER
 #include <string.h>
 #include <time.h> // for srand seeding and FPS calculation
 #include "FL/gl_draw.H"
+/* RAOS */
+#include "RAOS_config.h"
 #include "ui/agv.h" // eye movement
-#include "ui/draw/DrawScene.h" // draw sim scene
-#include "SimConfig.h"
-#include "SimThread.h"
-#include "model/SimModel.h"
+#include "ui/draw/draw_scene.h" // draw sim scene
+#include "model/RAOS_model.h"
 
 // width and height of current window, for redraw function
 static int sim_width = 1;
 static int sim_height = 1;
 
-static void SimView_reshape(int w, int h)
+static void RAOS_view_reshape(int w, int h)
 {
     // update width/height of window
     sim_width = w;
@@ -39,7 +39,7 @@ static void SimView_reshape(int w, int h)
 
 static void draw_axes(void);// draw axes
 static void draw_notes(void);//draw notes
-static void SimView_redraw(void)
+static void RAOS_view_redraw(void)
 {
     /* change eye moving */
     glMatrixMode(GL_PROJECTION);
@@ -50,7 +50,7 @@ static void SimView_redraw(void)
     glLoadIdentity();
 
     /* Begin drawing simulation scene */
-    DrawScene(); // draw sim scene
+    draw_scene_update(); // draw sim scene
     /* End drawing */
 
     /* draw axes on the ground */
@@ -66,7 +66,7 @@ static void SimView_redraw(void)
     //glFinish(); 
 }
 
-static void SimView_visible(int v)
+static void RAOS_view_visible(int v)
 {
     if (v == GLUT_VISIBLE)
         agvSetAllowIdle(1);
@@ -82,7 +82,7 @@ static void draw_axes(void)
     float ORG[3] = {0,0,0};
     float XP[3] = {0,0,0}, YP[3] = {0,0,0};
     /* get configs about arena size */
-    SimConfig_t *config = SimConfig_get_configs();
+    RAOS_config_t *config = RAOS_config_get_settings();
     XP[0] = config->arena.w?config->arena.w/2.0+1:5;
     YP[2] = config->arena.l?-(config->arena.l/2.0+1):-5;
     
@@ -147,10 +147,10 @@ static void draw_sim_time_note(void)
 {
     char buf[256];
 
-    if (!sim_is_running_or_not())
+    if (!RAOS_model_thread_is_running())
         return;
 
-    double time_passed = (SimModel_get_sim_state())->time;
+    double time_passed = (RAOS_model_thread_get_state())->time_passed;
     
     glDisable(GL_LIGHTING);
     {
@@ -170,15 +170,15 @@ static void draw_notes(void) {
 }
 
 
-static void SimView_idle(int) {
-    glutTimerFunc((unsigned int)(1000./60.), SimView_idle, 0); // FPS 60
+static void RAOS_view_idle(int) {
+    glutTimerFunc((unsigned int)(1000./60.), RAOS_view_idle, 0); // FPS 60
     // update view
     if (agvMoving) agvMove();
-    SimView_redraw();
+    RAOS_view_redraw();
     glutPostRedisplay();
 }
 
-void SimView_init(int width, int height)
+void RAOS_view_init(int width, int height)
 {
     // set width/height of window
     sim_width = width;
@@ -187,10 +187,10 @@ void SimView_init(int width, int height)
     agvInit(0); /* 0 cause we have our own idle */
     // config callbacks for glut
     //  these functions will not be called immediately
-    glutReshapeFunc(SimView_reshape);
-    glutDisplayFunc(SimView_redraw);
-    glutVisibilityFunc(SimView_visible);
-    glutTimerFunc((unsigned int)(1000./60.), SimView_idle, 0); // FPS 60
+    glutReshapeFunc(RAOS_view_reshape);
+    glutDisplayFunc(RAOS_view_redraw);
+    glutVisibilityFunc(RAOS_view_visible);
+    glutTimerFunc((unsigned int)(1000./60.), RAOS_view_idle, 0); // FPS 60
 
     /* Initialize GL stuff */
     glShadeModel(GL_FLAT);// or use GL_SMOOTH with more computation
@@ -207,6 +207,6 @@ void SimView_init(int width, int height)
     glLoadIdentity();
 
     /* init sim scene drawing */
-    DrawScene_init();
+    draw_scene_init();
 }
-/* End of SimView.cxx */
+/* End of RAOS_view.cxx */

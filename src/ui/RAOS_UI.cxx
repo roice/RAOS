@@ -11,8 +11,9 @@
 #include <FL/Fl_Double_Window.H>
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Button.H>
+#include <FL/Fl_Choice.H>
+#include <FL/Fl_Spinner.H>
 #include <FL/Fl_Box.H>
-#include <FL/Fl_Light_Button.H>
 #include <FL/Fl_Pixmap.H>
 #include <FL/Fl_Tabs.H>
 #include <FL/fl_ask.H>
@@ -25,11 +26,11 @@
 #include GL_HEADER
 #include GLUT_HEADER
 /* RAOS */
-#include "ui/SimUI.h"
+#include "RAOS_config.h" // runtime RAOS configs
+#include "ui/RAOS_UI.h"
 #include "ui/icons/icons.h" // pixmap icons used in Tool bar
-#include "ui/SimView.h" // 3D RAO view
-#include "SimThread.h"
-#include "SimConfig.h" // runtime RAOS configs
+#include "ui/RAOS_view.h" // 3D RAO view
+#include "model/RAOS_model.h"
 
 /*------- Configuration Dialog -------*/
 struct ConfigDlg_widgets { // for parameter saving
@@ -37,10 +38,18 @@ struct ConfigDlg_widgets { // for parameter saving
     Fl_Value_Input *arena_w;
     Fl_Value_Input *arena_l;
     Fl_Value_Input *arena_h;
-    // source position xyz
+    // source position
+    Fl_Choice *source_num;  // number of source 
+    Fl_Spinner *source_sel;  // select which source to change pos
     Fl_Value_Slider *source_x;
     Fl_Value_Slider *source_y;
     Fl_Value_Slider *source_z;
+    // wind
+    Fl_Choice   *wind_sel; // wind model selection
+    Fl_Box      *wind_vel_box; // (mean) wind velocity box
+    Fl_Value_Slider *wind_vel_x;
+    Fl_Value_Slider *wind_vel_y;
+    Fl_Value_Slider *wind_vel_z;
 };
 class ConfigDlg : public Fl_Window
 {
@@ -52,18 +61,22 @@ private:
     // callback funcs
     static void cb_close(Fl_Widget*, void*);
     static void cb_switch_tabs(Fl_Widget*, void*);
+    static void cb_change_src_num(Fl_Widget*, void*);
+    static void cb_change_src_sel(Fl_Widget*, void*);
     static void cb_change_src_pos_bounds(Fl_Widget*, void*);
-    // function to save current value of widgets to runtime configs
-    static void save_value_to_configs(ConfigDlg_widgets*);
+    static void cb_change_src_pos_x(Fl_Widget*, void*);
+    static void cb_change_src_pos_y(Fl_Widget*, void*);
+    static void cb_change_src_pos_z(Fl_Widget*, void*);
+    static void cb_change_wind_model_selection(Fl_Widget*, void*);
+    static void cb_change_wind_velocity(Fl_Widget*, void*);
     // function to get runtime configs to set value of widgets
     static void set_value_from_configs(ConfigDlg_widgets*);
 };
 
 void ConfigDlg::cb_close(Fl_Widget* w, void* data) {
     if (Fl::event() == FL_CLOSE) {
-        struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
-        // save widget values to RAOS runtime configs when closing the dialog window
-        save_value_to_configs(ws);
+        // save RAOS runtime configs to file when closing the dialog window
+        RAOS_config_save();
         ((Fl_Window*)w)->hide();
     }
 }
@@ -75,40 +88,109 @@ void ConfigDlg::cb_switch_tabs(Fl_Widget *w, void *data)
     tabs->selection_color( (tabs->value())->color() );
 }
 
+// change source number and source selections
+void ConfigDlg::cb_change_src_num(Fl_Widget* src_num, void* src_sel) {
+    // change source selection candidates
+    ((Fl_Spinner*)src_sel)->range(1, ((Fl_Choice*)src_num)->value()+1);
+    // change source selection if nessesary
+    if (((Fl_Spinner*)src_sel)->value() > ((Fl_Choice*)src_num)->value()+1)
+        ((Fl_Spinner*)src_sel)->value(((Fl_Choice*)src_num)->value()+1);
+    // save to configs
+    RAOS_config_t *configs = RAOS_config_get_settings();
+    configs->arena.num_sources = ((Fl_Choice*)src_num)->value()+1;
+}
+
+void ConfigDlg::cb_change_src_sel(Fl_Widget* src_sel, void* data) {
+    struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
+    RAOS_config_t *configs = RAOS_config_get_settings();
+    ws->source_x->value(configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[0]);
+    ws->source_y->value(configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[1]);
+    ws->source_z->value(configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[2]);
+}
+
 // change source position bounds according to arena size
 void ConfigDlg::cb_change_src_pos_bounds(Fl_Widget* arena_wlh, void* src_xyz) {
     ((Fl_Value_Slider*)src_xyz)->minimum(-((Fl_Valuator*)arena_wlh)->value()/2.0);
     ((Fl_Value_Slider*)src_xyz)->maximum(((Fl_Valuator*)arena_wlh)->value()/2.0);
 }
 
-void ConfigDlg::save_value_to_configs(ConfigDlg_widgets* ws) {
-    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
-    // save arena size
-    configs->arena.w = ws->arena_w->value();
-    configs->arena.l = ws->arena_l->value();
-    configs->arena.h = ws->arena_h->value();
-    // save source pos
-    configs->source.x = ws->source_x->value();
-    configs->source.y = ws->source_y->value();
-    configs->source.z = ws->source_z->value();
+// change source position
+void ConfigDlg::cb_change_src_pos_x(Fl_Widget* src_xyz, void* src_sel) {
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[0] = ((Fl_Value_Slider*)src_xyz)->value(); 
+}
+void ConfigDlg::cb_change_src_pos_y(Fl_Widget* src_xyz, void* src_sel) {
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[1] = ((Fl_Value_Slider*)src_xyz)->value(); 
+}
+void ConfigDlg::cb_change_src_pos_z(Fl_Widget* src_xyz, void* src_sel) {
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[2] = ((Fl_Value_Slider*)src_xyz)->value(); 
+}
+
+// change wind model selection
+void ConfigDlg::cb_change_wind_model_selection(Fl_Widget* wind_sel, void* data)
+{
+    struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
+    if (((Fl_Choice*)wind_sel)->value() == 0) { // uniform flow field
+        ws->wind_vel_box->label("Wind Velocity");
+        ws->wind_vel_box->hide();
+        ws->wind_vel_box->show();
+    }
+    if (((Fl_Choice*)wind_sel)->value() == 1) { // potential flow field
+        ws->wind_vel_box->label("Mean Wind Velocity");
+        ws->wind_vel_box->hide();
+        ws->wind_vel_box->show();
+    }
+
+    // save to config
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    if (((Fl_Choice*)wind_sel)->value() == 0)
+        configs->wind.model_name = "Uniform";
+    else if (((Fl_Choice*)wind_sel)->value() == 1)
+        configs->wind.model_name = "Potential";
+}
+
+void ConfigDlg::cb_change_wind_velocity(Fl_Widget* wind_vel_xyz, void* idx)
+{
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    configs->wind.wind_vel[(long int)((long int*)idx)] = ((Fl_Value_Slider*)wind_vel_xyz)->value();
 }
 
 void ConfigDlg::set_value_from_configs(ConfigDlg_widgets* ws) {
-    SimConfig_t* configs = SimConfig_get_configs(); // get runtime configs
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
     // set arena size
     ws->arena_w->value(configs->arena.w);
     ws->arena_l->value(configs->arena.l);
     ws->arena_h->value(configs->arena.h);
-    // set source pos & maximum
-    ws->source_x->value(configs->source.x);
-    ws->source_y->value(configs->source.y);
-    ws->source_z->value(configs->source.z);
+    // set source num, pos & maximum
+    ws->source_num->value(configs->arena.num_sources-1);
+    ws->source_x->value(configs->plume[static_cast<int>(ws->source_sel->value())-1].source_pos[0]);
+    ws->source_y->value(configs->plume[static_cast<int>(ws->source_sel->value())-1].source_pos[1]);
+    ws->source_z->value(configs->plume[static_cast<int>(ws->source_sel->value())-1].source_pos[2]);
     ws->source_x->minimum(-configs->arena.w/2.0);
     ws->source_y->minimum(-configs->arena.l/2.0);
     ws->source_z->minimum(-configs->arena.h/2.0);
     ws->source_x->maximum(configs->arena.w/2.0);
     ws->source_y->maximum(configs->arena.l/2.0);
     ws->source_z->maximum(configs->arena.h/2.0);
+    // set wind type
+    if (configs->wind.model_name == "Uniform") {
+        ws->wind_sel->value(0);
+        ws->wind_vel_box->label("Wind Velocity");
+        ws->wind_vel_box->hide();
+        ws->wind_vel_box->show();
+    }
+    else if (configs->wind.model_name == "Potential") {
+        ws->wind_sel->value(1);
+        ws->wind_vel_box->label("Mean Wind Velocity");
+        ws->wind_vel_box->hide();
+        ws->wind_vel_box->show();
+    }
+    // set wind velocity
+    ws->wind_vel_x->value(configs->wind.wind_vel[0]);
+    ws->wind_vel_y->value(configs->wind.wind_vel[1]);
+    ws->wind_vel_z->value(configs->wind.wind_vel[2]);
 }
 
 ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height, 
@@ -130,28 +212,43 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             scenario->color(0xe8e8e800); // light milk tea
             scenario->selection_color(0xe8e8e800); // light milk tea
             // Arena
-            Fl_Box *arena = new Fl_Box(t_x+10, t_y+25+10, 180, 130,"Arena");
+            Fl_Box *arena = new Fl_Box(t_x+10, t_y+25+10, t_w-20, 60,"Arena Size X-E/Y-N/Z-U");
             arena->box(FL_PLASTIC_UP_FRAME);
             arena->labelsize(16);
             arena->labelfont(FL_COURIER_BOLD_ITALIC);
             arena->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
             // Arena width/length/height
-            dlg_w.arena_w = new Fl_Value_Input(t_x+10+60,t_y+25+10+30,80,25,"Width");
-            dlg_w.arena_l = new Fl_Value_Input(t_x+10+60,t_y+25+10+60,80,25,"Length");
-            dlg_w.arena_h = new Fl_Value_Input(t_x+10+60,t_y+25+10+90,80,25,"Height");
-            new Fl_Box(t_x+10+60+80,t_y+25+10+30, 20, 25, "m");
-            new Fl_Box(t_x+10+60+80,t_y+25+10+60, 20, 25, "m");
-            new Fl_Box(t_x+10+60+80,t_y+25+10+90, 20, 25, "m");
+            dlg_w.arena_w = new Fl_Value_Input(t_x+10+10,t_y+25+10+30,t_w/4, 25,"");
+            dlg_w.arena_l = new Fl_Value_Input(t_x+10+10+(t_w-20)/3,t_y+25+10+30, t_w/4, 25,"");
+            dlg_w.arena_h = new Fl_Value_Input(t_x+10+10+(t_w-20)*2/3,t_y+25+10+30, t_w/4, 25,"");
+            new Fl_Box(t_x+(t_w-20)/3-10,t_y+25+10+30, 20, 25, "m");
+            new Fl_Box(t_x+(t_w-20)*2/3-10,t_y+25+10+30, 20, 25, "m");
+            new Fl_Box(t_x+t_w-30,t_y+25+10+30, 20, 25, "m");
             // Source
-            Fl_Box *source = new Fl_Box(t_x+10+190, t_y+25+10, 180, 130,"Source Position");
+            Fl_Box *source = new Fl_Box(t_x+10, t_y+25+10+65, t_w-20, 120,"Source Position");
             source->box(FL_PLASTIC_UP_FRAME);
             source->labelsize(16);
             source->labelfont(FL_COURIER_BOLD_ITALIC);
             source->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+            // Source number
+            dlg_w.source_num = new Fl_Choice(t_x+10+10, t_y+25+10+65+40, 100, 25, "");
+            new Fl_Box(t_x+10+10,t_y+25+10+65+20, 100, 25, "Num of Sources");
             // Source pos
-            dlg_w.source_x = new Fl_Value_Slider(t_x+10+210,t_y+25+10+30,140,25,"X");
-            dlg_w.source_y = new Fl_Value_Slider(t_x+10+210,t_y+25+10+60,140,25,"Y");
-            dlg_w.source_z = new Fl_Value_Slider(t_x+10+210,t_y+25+10+90,140,25,"Z");
+            dlg_w.source_sel = new Fl_Spinner(t_x+10+10, t_y+25+10+65+90, 100, 25, "");
+            new Fl_Box(t_x+10+10,t_y+25+10+65+65, 100, 25, "Which to Edit");
+            dlg_w.source_x = new Fl_Value_Slider(t_x+10+(t_w-20)/2,t_y+25+10+65+30,(t_w-20)/2-20,25,"X-E");
+            dlg_w.source_y = new Fl_Value_Slider(t_x+10+(t_w-20)/2,t_y+25+10+65+60,(t_w-20)/2-20,25,"Y-N");
+            dlg_w.source_z = new Fl_Value_Slider(t_x+10+(t_w-20)/2,t_y+25+10+65+90,(t_w-20)/2-20,25,"Z-U");
+            new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+30, 20, 25, "m");
+            new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+60, 20, 25, "m");
+            new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+90, 20, 25, "m");
+            char name_str[100];
+            for (int i = 0; i < RAOS_MAX_NUM_SOURCES; i++) {
+                snprintf(name_str, 100, "%d", i+1);
+                dlg_w.source_num->add(name_str);
+            }
+            dlg_w.source_sel->range(1, RAOS_MAX_NUM_SOURCES);
+            dlg_w.source_sel->step(1);
             dlg_w.source_x->labelsize(16);
             dlg_w.source_y->labelsize(16);
             dlg_w.source_z->labelsize(16);
@@ -160,13 +257,15 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             dlg_w.source_z->type(FL_HOR_NICE_SLIDER);
             dlg_w.source_x->align(Fl_Align(FL_ALIGN_LEFT));
             dlg_w.source_y->align(Fl_Align(FL_ALIGN_LEFT));
-            dlg_w.source_z->align(Fl_Align(FL_ALIGN_LEFT));
-            new Fl_Box(t_x+10+210+140,t_y+25+10+30, 20, 25, "m");
-            new Fl_Box(t_x+10+210+140,t_y+25+10+60, 20, 25, "m");
-            new Fl_Box(t_x+10+210+140,t_y+25+10+90, 20, 25, "m");
+            dlg_w.source_z->align(Fl_Align(FL_ALIGN_LEFT)); 
             dlg_w.arena_w->callback(cb_change_src_pos_bounds, (void*)dlg_w.source_x);
             dlg_w.arena_l->callback(cb_change_src_pos_bounds, (void*)dlg_w.source_y);
             dlg_w.arena_h->callback(cb_change_src_pos_bounds, (void*)dlg_w.source_z);
+            dlg_w.source_num->callback(cb_change_src_num, (void*)dlg_w.source_sel);
+            dlg_w.source_sel->callback(cb_change_src_sel, (void*)&dlg_w);
+            dlg_w.source_x->callback(cb_change_src_pos_x, (void*)dlg_w.source_sel);
+            dlg_w.source_y->callback(cb_change_src_pos_y, (void*)dlg_w.source_sel);
+            dlg_w.source_z->callback(cb_change_src_pos_z, (void*)dlg_w.source_sel);
         }
         scenario->end();
         // Tab Flow
@@ -176,31 +275,40 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             flow->color(0xe0ffff00); // light blue
             flow->selection_color(0xe0ffff00); // light blue
 
+            // wind model selection
+            dlg_w.wind_sel = new Fl_Choice(t_x+t_w/3, t_y+25+10, 200, 25, "Wind Model");
+            dlg_w.wind_sel->add("Uniform Wind Field");
+            dlg_w.wind_sel->add("Potential Flow Field");
+            dlg_w.wind_sel->value(0);
+            dlg_w.wind_sel->callback(cb_change_wind_model_selection, (void*)&dlg_w);
             // Mean wind velocity
-            Fl_Box *m_wind = new Fl_Box(t_x+10, t_y+25+10, 370, 130,"Mean Wind Vel");
-            m_wind->box(FL_PLASTIC_UP_FRAME);
-            m_wind->labelsize(16);
-            m_wind->labelfont(FL_COURIER_BOLD_ITALIC);
-            m_wind->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+            dlg_w.wind_vel_box = new Fl_Box(t_x+10, t_y+25+10+30, t_w-20, 120,"Wind Velocity");
+            dlg_w.wind_vel_box->box(FL_PLASTIC_UP_FRAME);
+            dlg_w.wind_vel_box->labelsize(16);
+            dlg_w.wind_vel_box->labelfont(FL_COURIER_BOLD_ITALIC);
+            dlg_w.wind_vel_box->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
             // Mean wind velocity x/y/z components
-            Fl_Value_Slider *m_wind_x = new Fl_Value_Slider(t_x+10+30,t_y+25+10+30,300,25,"X");
-            Fl_Value_Slider *m_wind_y = new Fl_Value_Slider(t_x+10+30,t_y+25+10+60,300,25,"Y");
-            Fl_Value_Slider *m_wind_z = new Fl_Value_Slider(t_x+10+30,t_y+25+10+90,300,25,"Z");
-            m_wind_x->labelsize(16);
-            m_wind_y->labelsize(16);
-            m_wind_z->labelsize(16);
-            m_wind_x->type(FL_HOR_NICE_SLIDER);
-            m_wind_y->type(FL_HOR_NICE_SLIDER);
-            m_wind_z->type(FL_HOR_NICE_SLIDER);
-            m_wind_x->align(Fl_Align(FL_ALIGN_LEFT));
-            m_wind_y->align(Fl_Align(FL_ALIGN_LEFT));
-            m_wind_z->align(Fl_Align(FL_ALIGN_LEFT));
-            m_wind_x->bounds(0, 10); // 0~10 m/s
-            m_wind_y->bounds(0, 10);
-            m_wind_z->bounds(0, 10);
-            new Fl_Box(t_x+10+30+300,t_y+25+10+30, 30, 25, "m/s");
-            new Fl_Box(t_x+10+30+300,t_y+25+10+60, 30, 25, "m/s");
-            new Fl_Box(t_x+10+30+300,t_y+25+10+90, 30, 25, "m/s");
+            dlg_w.wind_vel_x = new Fl_Value_Slider(t_x+10+30,t_y+25+10+30+30,300,25,"X");
+            dlg_w.wind_vel_y = new Fl_Value_Slider(t_x+10+30,t_y+25+10+30+60,300,25,"Y");
+            dlg_w.wind_vel_z = new Fl_Value_Slider(t_x+10+30,t_y+25+10+30+90,300,25,"Z");
+            dlg_w.wind_vel_x->labelsize(16);
+            dlg_w.wind_vel_y->labelsize(16);
+            dlg_w.wind_vel_z->labelsize(16);
+            dlg_w.wind_vel_x->type(FL_HOR_NICE_SLIDER);
+            dlg_w.wind_vel_y->type(FL_HOR_NICE_SLIDER);
+            dlg_w.wind_vel_z->type(FL_HOR_NICE_SLIDER);
+            dlg_w.wind_vel_x->align(Fl_Align(FL_ALIGN_LEFT));
+            dlg_w.wind_vel_y->align(Fl_Align(FL_ALIGN_LEFT));
+            dlg_w.wind_vel_z->align(Fl_Align(FL_ALIGN_LEFT));
+            dlg_w.wind_vel_x->bounds(0, 10); // 0~10 m/s
+            dlg_w.wind_vel_y->bounds(0, 10);
+            dlg_w.wind_vel_z->bounds(0, 10);
+            dlg_w.wind_vel_x->callback(cb_change_wind_velocity, (void*)0);
+            dlg_w.wind_vel_y->callback(cb_change_wind_velocity, (void*)1);
+            dlg_w.wind_vel_z->callback(cb_change_wind_velocity, (void*)2);
+            new Fl_Box(t_x+10+30+300,t_y+25+10+30+30, 30, 25, "m/s");
+            new Fl_Box(t_x+10+30+300,t_y+25+10+30+60, 30, 25, "m/s");
+            new Fl_Box(t_x+10+30+300,t_y+25+10+30+90, 30, 25, "m/s");
         }
         flow->end();
         // Tab Plume
@@ -233,11 +341,11 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
 /*------- ToolBar -------*/
 struct ToolBar_Widgets
 {
-    Fl_Button* start; // start button
-    Fl_Button* pause; // pause button
-    Fl_Button* stop; // stop button
-    Fl_Button* config; // config button
-    Fl_Light_Button* record; // record button
+    Fl_Button* start;   // start button
+    Fl_Button* pause;   // pause button
+    Fl_Button* stop;    // stop button
+    Fl_Button* config;  // config button
+    Fl_Choice* speed;   // speed selection
 };
 struct ToolBar_Handles // handles of dialogs/panels opened by corresponding buttons
 {
@@ -254,6 +362,8 @@ private:
     static void cb_button_pause(Fl_Widget*, void*);
     static void cb_button_stop(Fl_Widget*, void*);
     static void cb_button_config(Fl_Widget*, void*);
+    static void cb_change_speed(Fl_Widget*, void*);
+    static void set_value_from_configs(ToolBar_Widgets*);
 };
 struct ToolBar_Handles ToolBar::hs = {NULL};
 
@@ -266,7 +376,7 @@ void ToolBar::cb_button_start(Fl_Widget *w, void *data)
         // release pause button
         widgets->pause->activate(); widgets->pause->clear();
         // continue running
-        *(sim_get_pauss_control_addr()) = false;
+        RAOS_model_thread_resume();
     }
     else {
         // if pause button is not pressed, then check start button state
@@ -275,7 +385,8 @@ void ToolBar::cb_button_start(Fl_Widget *w, void *data)
             // lock config button
             widgets->config->deactivate();
 
-            sim_start();
+            // start simulation
+            RAOS_model_thread_create();
         }
         else {
             // user is trying to release start button when pause is not pressed
@@ -292,7 +403,7 @@ void ToolBar::cb_button_pause(Fl_Widget *w, void *data)
         widgets->start->value(0); // release start button
         widgets->pause->deactivate(); // make pause button unclickable
         // pause simulation...
-        *(sim_get_pauss_control_addr()) = true;
+        RAOS_model_thread_pause();
     }
     else {
     // if start button not pressed, pause button will not toggle and no code action will be took
@@ -308,7 +419,7 @@ void ToolBar::cb_button_stop(Fl_Widget *w, void *data)
     widgets->pause->activate(); widgets->pause->clear();
 
     /* stop simulation */
-    sim_stop();
+    RAOS_model_thread_destroy();
 
     // unlock config button
     widgets->config->activate(); 
@@ -333,6 +444,18 @@ void ToolBar::cb_button_config(Fl_Widget *w, void *data)
     }
 }
 
+void ToolBar::cb_change_speed(Fl_Widget *w, void *data)
+{
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    configs->common.speed = ((Fl_Choice*)w)->value();
+}
+
+void ToolBar::set_value_from_configs(ToolBar_Widgets *ws)
+{
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    ws->speed->value(configs->common.speed);
+}
+
 ToolBar::ToolBar(int Xpos, int Ypos, int Width, int Height, void *win) :
 Fl_Group(Xpos, Ypos, Width, Height)
 {
@@ -345,7 +468,7 @@ Fl_Group(Xpos, Ypos, Width, Height)
     ws.pause = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     ws.stop = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
     ws.config = new Fl_Button(Xpos, Ypos, Width, Height); Xpos += Width + 5;
-    ws.record = new Fl_Light_Button(Xpos, Ypos, Width+22, Height); Xpos += Width+22+5;
+    ws.speed = new Fl_Choice(Xpos, Ypos, 4*Width, Height); Xpos += 4*Width + 5;
     Fl_Box *bar_rest = new Fl_Box(FL_DOWN_BOX, Xpos, Ypos, bar->w()-Xpos, Height, "");
     resizable(bar_rest); // protect buttons from resizing
     // icons
@@ -353,40 +476,46 @@ Fl_Group(Xpos, Ypos, Width, Height)
     Fl_Pixmap *icon_pause = new Fl_Pixmap(pixmap_icon_pause);
     Fl_Pixmap *icon_stop = new Fl_Pixmap(pixmap_icon_stop);
     Fl_Pixmap *icon_config = new Fl_Pixmap(pixmap_icon_config);
-    Fl_Pixmap *icon_record = new Fl_Pixmap(pixmap_icon_record);
     // link icons to buttons
     ws.start->image(icon_start);
     ws.pause->image(icon_pause);
     ws.stop->image(icon_stop);
     ws.config->image(icon_config);
-    ws.record->image(icon_record);
     // tips for buttons
     ws.start->tooltip("Start Simulation");
     ws.pause->tooltip("Pause Simulation");
     ws.stop->tooltip("Stop Simulation");
     ws.config->tooltip("Settings");
-    ws.record->tooltip("Recording");
+    ws.speed->tooltip("Simulation Speed");
+    // speed candidates
+    ws.speed->add("Auto Highest");
+    char name_str[20];
+    for (int i = 0; i < 100; i++) {
+        snprintf(name_str, 20, "%dx Speed", i+1);
+        ws.speed->add(name_str);
+    }
+    ws.speed->value(0); // default auto highest
     // types of buttons
     ws.start->type(FL_TOGGLE_BUTTON); // start & pause are mutually exclusive
     ws.pause->type(FL_TOGGLE_BUTTON);
-    // colors
-    ws.record->selection_color(FL_RED);
     // link call backs to buttons
     ws.start->callback(cb_button_start, (void*)&ws);
     ws.pause->callback(cb_button_pause, (void*)&ws);
-    //  start & pause buttons will be released when stop button is pressed
     ws.stop->callback(cb_button_stop, (void*)&ws);
     ws.config->callback(cb_button_config, (void*)win);
+    ws.speed->callback(cb_change_speed, (void*)&ws);
+    // restore values from configs
+    set_value_from_configs(&ws);
     end();
 }
 
 /* =============================================
  * ================  UI  =======================
  * ============================================= */
-void SimUI::cb_close(Fl_Widget* w, void* data) {
+void RAOS_UI::cb_close(Fl_Widget* w, void* data) {
     // close RAOS
     if (Fl::event() == FL_CLOSE) {
-        sim_stop();
+        //sim_stop();
 
         // close main window
         ((Fl_Window*)w)->hide();
@@ -394,7 +523,7 @@ void SimUI::cb_close(Fl_Widget* w, void* data) {
 }
 
 /*------- Creation function of User Interface  -------*/
-SimUI::SimUI(int width, int height, const char* title=0)
+RAOS_UI::RAOS_UI(int width, int height, const char* title=0)
 {
     /* Main Window, control panel */
     Fl_Double_Window *panel = new Fl_Double_Window(width, height, title);
@@ -415,13 +544,13 @@ SimUI::SimUI(int width, int height, const char* title=0)
     glutInitWindowSize(width-10, height-tool->h()-10);// be consistent with SimView_init
     glutInitWindowPosition(panel->x()+5, tool->h()+5); // place it inside parent window
     glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_MULTISAMPLE);
-    glutCreateWindow("Simulation view");
+    glutCreateWindow("Simulation viewer");
     /* end adding children */
     panel->end();
     panel->resizable(glut_window);
     panel->callback(cb_close, &ws);
  
-    // init Sim view
-    SimView_init(width-10, height-tool->h()-10);// pass gl window size
+    // init RAOS simulation viewer
+    RAOS_view_init(width-10, height-tool->h()-10);// pass gl window size
 };
-/* End of SimUI.cxx */
+/* End of RAOS_UI.cxx */

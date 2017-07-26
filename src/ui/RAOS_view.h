@@ -11,9 +11,9 @@
  * Date: 2016-02-16 create this file
  */
 
-#ifndef SIMVIEW_H
-#define SIMVIEW_H
+#ifndef RAOS_VIEW_H
+#define RAOS_VIEW_H
 
-void SimView_init(int, int);
+void RAOS_view_init(int, int);
 
 #endif

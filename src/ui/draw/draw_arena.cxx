@@ -14,7 +14,7 @@
 #include <math.h> // floor()
 #include "ui/draw/draw_arena.h"
 #include "ui/draw/materials.h" // use material lists
-#include "SimConfig.h" // get configurations about Arena
+#include "RAOS_config.h" // get configurations about Arena
 
 /* declarations of local functions */
 // functions to create arenas
@@ -35,7 +35,7 @@ void draw_arena(int arena_name)
 static void draw_arena_basic(void)
 {
     /* get configs of arena */
-    SimConfig_t *config = SimConfig_get_configs();
+    RAOS_config_t *config = RAOS_config_get_settings();
 
     /* draw Ground */
     // calculate the four vertex of ground
@@ -86,23 +86,26 @@ static void draw_arena_basic(void)
     glPopAttrib();
 
     /* draw chimney (odor source), a cylinder */
-    GLUquadricObj * chimney_obj = gluNewQuadric();
-    gluQuadricDrawStyle(chimney_obj, GLU_FILL);
-    gluQuadricNormals(chimney_obj, GLU_SMOOTH);
+    GLUquadricObj *chimney_obj;
+    for (int i = 0; i < config->arena.num_sources; i++) {
+        chimney_obj = gluNewQuadric();
+        gluQuadricDrawStyle(chimney_obj, GLU_FILL);
+        gluQuadricNormals(chimney_obj, GLU_SMOOTH);
 
-    glPushMatrix();
-    glTranslatef(config->source.x, 0, -config->source.y);
-    glRotatef(-90, 1, 0, 0); // make it upright
-    glPushAttrib(GL_LIGHTING_BIT);
+        glPushMatrix();
+        glTranslatef(config->plume[i].source_pos[0], 0, -config->plume[i].source_pos[1]);
+        glRotatef(-90, 1, 0, 0); // make it upright
+        glPushAttrib(GL_LIGHTING_BIT);
 
-    glCallList(CEMENT_MAT);
-    gluCylinder(chimney_obj, 
+        glCallList(CEMENT_MAT);
+        gluCylinder(chimney_obj, 
             0.2, // base radius
             0.1, // top radius
-            config->source.z, // length
+            config->plume[i].source_pos[2], // length
             8, /*slices*/ 3 /*stacks*/);
-    glPopAttrib(); 
-    glPopMatrix();
+        glPopAttrib(); 
+        glPopMatrix();
+    }
 }
 
 /* End of draw_arena.cxx */

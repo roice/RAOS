@@ -7,23 +7,23 @@
  *
  * Author: Roice (LUO Bing)
  * Date: 2016-02-23 create this file
+ *       2017-07-21 rename this file from DrawScene.cxx to draw_scene.cxx
  */
 
 #include GL_HEADER
 
 /* thread */
 #include <pthread.h>
-
-#include "SimThread.h"
-#include "model/SimModel.h"
-#include "ui/draw/draw_robots.h" // robots visualization
-#include "ui/draw/draw_arena.h" // arena visualization
-#include "ui/draw/draw_plume.h" // plume visual
-#ifdef RAOS_FEATURE_WAKES
-    #include "ui/draw/draw_wake.h" // wake visual
-#endif
-#include "ui/draw/draw_ref_point.h"
+/* RAOS */
 #include "ui/draw/materials.h" // create material lists
+#include "ui/draw/draw_arena.h" // arena visualization
+//#include "ui/draw/draw_plume.h" // plume visual
+//#include "ui/draw/draw_robots.h" // robots visualization
+//#ifdef RAOS_FEATURE_WAKES
+//    #include "ui/draw/draw_wake.h" // wake visual
+//#endif
+//#include "ui/draw/draw_ref_point.h"
+
 
 GLfloat localAmb[4] = { 0.7, 0.7, 0.7, 1.0 };
 GLfloat ambient0[4] = { 0.0, 0.0, 0.0, 1.0 };
@@ -39,7 +39,7 @@ GLfloat position1[4] = { -2.0, 100.5, 1.0, 0.0 };
  * draw everything (environment + quad rotor)
  *--------------------------------------------------------------------------
  */
-void DrawScene(void)
+void draw_scene_update(void)
 { 
     /* GL stuff */
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, localAmb);
@@ -62,6 +62,15 @@ void DrawScene(void)
     /* draw arena */
     draw_arena(SIM_ARENA_BASIC);
 
+    /* draw wind field */
+
+    /* draw plumes */
+
+    /* draw robots */
+
+    /* draw wakes */
+
+#if 0
     if (!sim_is_running_or_not())
         return;
 
@@ -80,10 +89,11 @@ void DrawScene(void)
     draw_plume();
 
     pthread_mutex_unlock(sim_get_data_lock());
+#endif
 }
 
-void DrawScene_init(void) // call before DrawScene
+void draw_scene_init(void) // call before draw_scene_update
 {
     create_materials();
 }
-/* End of DrawScene.cxx */
+/* End of draw_scene.cxx */
