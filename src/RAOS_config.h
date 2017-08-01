@@ -19,6 +19,8 @@ typedef struct {
     float h;
     // number of sources
     int num_sources;
+    // number of robots
+    int num_robots;
 }RAOS_config_arena_t;
 
 typedef struct {
@@ -41,9 +43,11 @@ typedef struct {
 
 typedef struct {
     // robot type
-    std::string type;
+    std::string model_name;
     // init pos
     float init_pos[3];
+    // init att
+    float init_att[3];
 }RAOS_config_robot_t;
 
 /* configuration struct */

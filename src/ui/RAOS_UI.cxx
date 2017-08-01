@@ -12,7 +12,6 @@
 #include <FL/Fl_Group.H>
 #include <FL/Fl_Button.H>
 #include <FL/Fl_Choice.H>
-#include <FL/Fl_Spinner.H>
 #include <FL/Fl_Box.H>
 #include <FL/Fl_Pixmap.H>
 #include <FL/Fl_Tabs.H>
@@ -35,21 +34,27 @@
 /*------- Configuration Dialog -------*/
 struct ConfigDlg_widgets { // for parameter saving
     // arena widith/length/height
-    Fl_Value_Input *arena_w;
-    Fl_Value_Input *arena_l;
-    Fl_Value_Input *arena_h;
+    Fl_Value_Input  *arena_w;
+    Fl_Value_Input  *arena_l;
+    Fl_Value_Input  *arena_h;
     // source position
-    Fl_Choice *source_num;  // number of source 
-    Fl_Spinner *source_sel;  // select which source to change pos
+    Fl_Choice       *source_num;  // number of source 
+    Fl_Choice       *source_sel;  // select which source to change pos
     Fl_Value_Slider *source_x;
     Fl_Value_Slider *source_y;
     Fl_Value_Slider *source_z;
     // wind
-    Fl_Choice   *wind_sel; // wind model selection
-    Fl_Box      *wind_vel_box; // (mean) wind velocity box
+    Fl_Choice       *wind_model_sel; // wind model selection
+    Fl_Box          *wind_vel_box; // (mean) wind velocity box
     Fl_Value_Slider *wind_vel_x;
     Fl_Value_Slider *wind_vel_y;
     Fl_Value_Slider *wind_vel_z;
+    // plume
+    Fl_Choice       *plume_sel; // select which plume to change parameters
+    Fl_Choice       *plume_model_sel; // plume model selection
+    Fl_Box          *plume_model_farrell_box; // farrell model paramenter box
+    Fl_Value_Input  *plume_model_farrell_pps;   // parcels per second of Farrell model
+    Fl_Value_Input  *plume_model_farrell_lambda; // lambda parameter of Farrell model
 };
 class ConfigDlg : public Fl_Window
 {
@@ -69,6 +74,9 @@ private:
     static void cb_change_src_pos_z(Fl_Widget*, void*);
     static void cb_change_wind_model_selection(Fl_Widget*, void*);
     static void cb_change_wind_velocity(Fl_Widget*, void*);
+    static void cb_change_plume_sel(Fl_Widget*, void*);
+    static void cb_change_plume_model_selection(Fl_Widget*, void*);
+    static void cb_change_plume_model_parameters(Fl_Widget*, void*);
     // function to get runtime configs to set value of widgets
     static void set_value_from_configs(ConfigDlg_widgets*);
 };
@@ -89,12 +97,33 @@ void ConfigDlg::cb_switch_tabs(Fl_Widget *w, void *data)
 }
 
 // change source number and source selections
-void ConfigDlg::cb_change_src_num(Fl_Widget* src_num, void* src_sel) {
+void ConfigDlg::cb_change_src_num(Fl_Widget* src_num, void* data) {
+    struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
+    char name_str[20];
     // change source selection candidates
-    ((Fl_Spinner*)src_sel)->range(1, ((Fl_Choice*)src_num)->value()+1);
+    int src_sel_value = ws->source_sel->value();
+    ws->source_sel->clear();
+    for (int i = 0; i < ((Fl_Choice*)src_num)->value()+1; i++) {
+        snprintf(name_str, 20, "%d", i+1);
+        ws->source_sel->add(name_str);
+    } 
     // change source selection if nessesary
-    if (((Fl_Spinner*)src_sel)->value() > ((Fl_Choice*)src_num)->value()+1)
-        ((Fl_Spinner*)src_sel)->value(((Fl_Choice*)src_num)->value()+1);
+    if (src_sel_value > ((Fl_Choice*)src_num)->value())
+        ws->source_sel->value(((Fl_Choice*)src_num)->value());
+    else
+        ws->source_sel->value(src_sel_value);
+    // change plume selection candidates
+    int plume_sel_value = ws->plume_sel->value();
+    ws->plume_sel->clear();
+    for (int i = 0; i < ((Fl_Choice*)src_num)->value()+1; i++) {
+        snprintf(name_str, 20, "%d", i+1);
+        ws->plume_sel->add(name_str);
+    }
+    // change plume selection if nessesary
+    if (plume_sel_value > ((Fl_Choice*)src_num)->value())
+        ws->plume_sel->value(((Fl_Choice*)src_num)->value());
+    else
+        ws->plume_sel->value(plume_sel_value);
     // save to configs
     RAOS_config_t *configs = RAOS_config_get_settings();
     configs->arena.num_sources = ((Fl_Choice*)src_num)->value()+1;
@@ -103,9 +132,9 @@ void ConfigDlg::cb_change_src_num(Fl_Widget* src_num, void* src_sel) {
 void ConfigDlg::cb_change_src_sel(Fl_Widget* src_sel, void* data) {
     struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
     RAOS_config_t *configs = RAOS_config_get_settings();
-    ws->source_x->value(configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[0]);
-    ws->source_y->value(configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[1]);
-    ws->source_z->value(configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[2]);
+    ws->source_x->value(configs->plume[((Fl_Choice*)src_sel)->value()].source_pos[0]);
+    ws->source_y->value(configs->plume[((Fl_Choice*)src_sel)->value()].source_pos[1]);
+    ws->source_z->value(configs->plume[((Fl_Choice*)src_sel)->value()].source_pos[2]);
 }
 
 // change source position bounds according to arena size
@@ -117,27 +146,27 @@ void ConfigDlg::cb_change_src_pos_bounds(Fl_Widget* arena_wlh, void* src_xyz) {
 // change source position
 void ConfigDlg::cb_change_src_pos_x(Fl_Widget* src_xyz, void* src_sel) {
     RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
-    configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[0] = ((Fl_Value_Slider*)src_xyz)->value(); 
+    configs->plume[((Fl_Choice*)src_sel)->value()].source_pos[0] = ((Fl_Value_Slider*)src_xyz)->value(); 
 }
 void ConfigDlg::cb_change_src_pos_y(Fl_Widget* src_xyz, void* src_sel) {
     RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
-    configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[1] = ((Fl_Value_Slider*)src_xyz)->value(); 
+    configs->plume[((Fl_Choice*)src_sel)->value()].source_pos[1] = ((Fl_Value_Slider*)src_xyz)->value(); 
 }
 void ConfigDlg::cb_change_src_pos_z(Fl_Widget* src_xyz, void* src_sel) {
     RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
-    configs->plume[static_cast<int>(((Fl_Spinner*)src_sel)->value())-1].source_pos[2] = ((Fl_Value_Slider*)src_xyz)->value(); 
+    configs->plume[((Fl_Choice*)src_sel)->value()].source_pos[2] = ((Fl_Value_Slider*)src_xyz)->value(); 
 }
 
 // change wind model selection
-void ConfigDlg::cb_change_wind_model_selection(Fl_Widget* wind_sel, void* data)
+void ConfigDlg::cb_change_wind_model_selection(Fl_Widget* sel, void* data)
 {
     struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
-    if (((Fl_Choice*)wind_sel)->value() == 0) { // uniform flow field
+    if (((Fl_Choice*)sel)->value() == 0) { // uniform flow field
         ws->wind_vel_box->label("Wind Velocity");
         ws->wind_vel_box->hide();
         ws->wind_vel_box->show();
     }
-    if (((Fl_Choice*)wind_sel)->value() == 1) { // potential flow field
+    if (((Fl_Choice*)sel)->value() == 1) { // potential flow field
         ws->wind_vel_box->label("Mean Wind Velocity");
         ws->wind_vel_box->hide();
         ws->wind_vel_box->show();
@@ -145,9 +174,9 @@ void ConfigDlg::cb_change_wind_model_selection(Fl_Widget* wind_sel, void* data)
 
     // save to config
     RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
-    if (((Fl_Choice*)wind_sel)->value() == 0)
+    if (((Fl_Choice*)sel)->value() == 0)
         configs->wind.model_name = "Uniform";
-    else if (((Fl_Choice*)wind_sel)->value() == 1)
+    else if (((Fl_Choice*)sel)->value() == 1)
         configs->wind.model_name = "Potential";
 }
 
@@ -157,17 +186,58 @@ void ConfigDlg::cb_change_wind_velocity(Fl_Widget* wind_vel_xyz, void* idx)
     configs->wind.wind_vel[(long int)((long int*)idx)] = ((Fl_Value_Slider*)wind_vel_xyz)->value();
 }
 
+void ConfigDlg::cb_change_plume_sel(Fl_Widget* sel, void* data)
+{
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
+
+    // display the parameters of this plume selection
+    ws->plume_model_farrell_pps->value(configs->plume[((Fl_Choice*)sel)->value()].model_farrell_pps);
+    ws->plume_model_farrell_lambda->value(configs->plume[((Fl_Choice*)sel)->value()].model_farrell_lambda);
+}
+
+void ConfigDlg::cb_change_plume_model_selection(Fl_Widget* sel, void* data)
+{
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
+    
+    if (((Fl_Choice*)sel)->value() == 0) { // Farrell plume model
+        ws->plume_model_farrell_box->show();
+        configs->plume[ws->plume_sel->value()].model_name = "Farrell";
+    }
+}
+
+void ConfigDlg::cb_change_plume_model_parameters(Fl_Widget* w, void* data)
+{
+    struct ConfigDlg_widgets *ws = (struct ConfigDlg_widgets*)data;
+    RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    // find which widget called this function and execute corresponding actions
+    if (w == ws->plume_model_farrell_pps)
+        configs->plume[ws->plume_sel->value()].model_farrell_pps = ((Fl_Value_Input*)w)->value();
+    else if (w == ws->plume_model_farrell_lambda)
+        configs->plume[ws->plume_sel->value()].model_farrell_lambda = ((Fl_Value_Input*)w)->value();
+}
+
 void ConfigDlg::set_value_from_configs(ConfigDlg_widgets* ws) {
     RAOS_config_t* configs = RAOS_config_get_settings(); // get runtime configs
+    char name_str[20];
     // set arena size
     ws->arena_w->value(configs->arena.w);
     ws->arena_l->value(configs->arena.l);
     ws->arena_h->value(configs->arena.h);
-    // set source num, pos & maximum
+    // set source num
     ws->source_num->value(configs->arena.num_sources-1);
-    ws->source_x->value(configs->plume[static_cast<int>(ws->source_sel->value())-1].source_pos[0]);
-    ws->source_y->value(configs->plume[static_cast<int>(ws->source_sel->value())-1].source_pos[1]);
-    ws->source_z->value(configs->plume[static_cast<int>(ws->source_sel->value())-1].source_pos[2]);
+    // set source selection candidates
+    ws->source_sel->clear();
+    for (int i = 0; i < ws->source_num->value()+1; i++) {
+        snprintf(name_str, 20, "%d", i+1);
+        ws->source_sel->add(name_str);
+    }
+    ws->source_sel->value(0);
+    // set source position
+    ws->source_x->value(configs->plume[ws->source_sel->value()].source_pos[0]);
+    ws->source_y->value(configs->plume[ws->source_sel->value()].source_pos[1]);
+    ws->source_z->value(configs->plume[ws->source_sel->value()].source_pos[2]);
     ws->source_x->minimum(-configs->arena.w/2.0);
     ws->source_y->minimum(-configs->arena.l/2.0);
     ws->source_z->minimum(-configs->arena.h/2.0);
@@ -176,13 +246,13 @@ void ConfigDlg::set_value_from_configs(ConfigDlg_widgets* ws) {
     ws->source_z->maximum(configs->arena.h/2.0);
     // set wind type
     if (configs->wind.model_name == "Uniform") {
-        ws->wind_sel->value(0);
+        ws->wind_model_sel->value(0);
         ws->wind_vel_box->label("Wind Velocity");
         ws->wind_vel_box->hide();
         ws->wind_vel_box->show();
     }
     else if (configs->wind.model_name == "Potential") {
-        ws->wind_sel->value(1);
+        ws->wind_model_sel->value(1);
         ws->wind_vel_box->label("Mean Wind Velocity");
         ws->wind_vel_box->hide();
         ws->wind_vel_box->show();
@@ -191,6 +261,22 @@ void ConfigDlg::set_value_from_configs(ConfigDlg_widgets* ws) {
     ws->wind_vel_x->value(configs->wind.wind_vel[0]);
     ws->wind_vel_y->value(configs->wind.wind_vel[1]);
     ws->wind_vel_z->value(configs->wind.wind_vel[2]);
+    // set plume selection candidates
+    ws->plume_sel->clear();
+    for (int i = 0; i < ws->source_num->value()+1; i++) {
+        snprintf(name_str, 20, "%d", i+1);
+        ws->plume_sel->add(name_str);
+    }
+    ws->plume_sel->value(0);
+    // set plume model
+    if (configs->plume[ws->plume_sel->value(0)].model_name == "Farrell")
+        ws->plume_model_sel->value(0);
+    // set plume model parameters
+    if (ws->plume_model_sel->value() == 0) { // "Farrell"
+        ws->plume_model_farrell_box->show();
+        ws->plume_model_farrell_pps->value(configs->plume[ws->plume_sel->value()].model_farrell_pps);
+        ws->plume_model_farrell_lambda->value(configs->plume[ws->plume_sel->value()].model_farrell_lambda);
+    }
 }
 
 ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height, 
@@ -200,6 +286,7 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
     callback(cb_close, (void*)&dlg_w);   
     // begin adding children
     begin();
+    char name_str[20]; // name string
     // Tabs
     int t_x = 5, t_y = 5, t_w = w()-10, t_h = h()-10;
     Fl_Tabs *tabs = new Fl_Tabs(t_x, t_y, t_w, t_h);
@@ -234,21 +321,24 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             dlg_w.source_num = new Fl_Choice(t_x+10+10, t_y+25+10+65+40, 100, 25, "");
             new Fl_Box(t_x+10+10,t_y+25+10+65+20, 100, 25, "Num of Sources");
             // Source pos
-            dlg_w.source_sel = new Fl_Spinner(t_x+10+10, t_y+25+10+65+90, 100, 25, "");
+            dlg_w.source_sel = new Fl_Choice(t_x+10+10, t_y+25+10+65+90, 100, 25, "");
             new Fl_Box(t_x+10+10,t_y+25+10+65+65, 100, 25, "Which to Edit");
             dlg_w.source_x = new Fl_Value_Slider(t_x+10+(t_w-20)/2,t_y+25+10+65+30,(t_w-20)/2-20,25,"X-E");
             dlg_w.source_y = new Fl_Value_Slider(t_x+10+(t_w-20)/2,t_y+25+10+65+60,(t_w-20)/2-20,25,"Y-N");
             dlg_w.source_z = new Fl_Value_Slider(t_x+10+(t_w-20)/2,t_y+25+10+65+90,(t_w-20)/2-20,25,"Z-U");
             new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+30, 20, 25, "m");
             new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+60, 20, 25, "m");
-            new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+90, 20, 25, "m");
-            char name_str[100];
+            new Fl_Box(t_x+10+t_w-40,t_y+25+10+65+90, 20, 25, "m"); 
             for (int i = 0; i < RAOS_MAX_NUM_SOURCES; i++) {
-                snprintf(name_str, 100, "%d", i+1);
+                snprintf(name_str, 20, "%d", i+1);
                 dlg_w.source_num->add(name_str);
             }
-            dlg_w.source_sel->range(1, RAOS_MAX_NUM_SOURCES);
-            dlg_w.source_sel->step(1);
+            dlg_w.source_num->value(0); // default one
+            for (int i = 0; i < dlg_w.source_num->value()+1; i++) {
+                snprintf(name_str, 20, "%d", i+1);
+                dlg_w.source_sel->add(name_str);
+            }
+            dlg_w.source_sel->value(0);
             dlg_w.source_x->labelsize(16);
             dlg_w.source_y->labelsize(16);
             dlg_w.source_z->labelsize(16);
@@ -261,7 +351,7 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             dlg_w.arena_w->callback(cb_change_src_pos_bounds, (void*)dlg_w.source_x);
             dlg_w.arena_l->callback(cb_change_src_pos_bounds, (void*)dlg_w.source_y);
             dlg_w.arena_h->callback(cb_change_src_pos_bounds, (void*)dlg_w.source_z);
-            dlg_w.source_num->callback(cb_change_src_num, (void*)dlg_w.source_sel);
+            dlg_w.source_num->callback(cb_change_src_num, (void*)&dlg_w);
             dlg_w.source_sel->callback(cb_change_src_sel, (void*)&dlg_w);
             dlg_w.source_x->callback(cb_change_src_pos_x, (void*)dlg_w.source_sel);
             dlg_w.source_y->callback(cb_change_src_pos_y, (void*)dlg_w.source_sel);
@@ -276,11 +366,11 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             flow->selection_color(0xe0ffff00); // light blue
 
             // wind model selection
-            dlg_w.wind_sel = new Fl_Choice(t_x+t_w/3, t_y+25+10, 200, 25, "Wind Model");
-            dlg_w.wind_sel->add("Uniform Wind Field");
-            dlg_w.wind_sel->add("Potential Flow Field");
-            dlg_w.wind_sel->value(0);
-            dlg_w.wind_sel->callback(cb_change_wind_model_selection, (void*)&dlg_w);
+            dlg_w.wind_model_sel = new Fl_Choice(t_x+t_w/3, t_y+25+10, 200, 25, "Wind Model");
+            dlg_w.wind_model_sel->add("Uniform Wind Field");
+            dlg_w.wind_model_sel->add("Potential Flow Field");
+            dlg_w.wind_model_sel->value(0);
+            dlg_w.wind_model_sel->callback(cb_change_wind_model_selection, (void*)&dlg_w);
             // Mean wind velocity
             dlg_w.wind_vel_box = new Fl_Box(t_x+10, t_y+25+10+30, t_w-20, 120,"Wind Velocity");
             dlg_w.wind_vel_box->box(FL_PLASTIC_UP_FRAME);
@@ -317,6 +407,34 @@ ConfigDlg::ConfigDlg(int xpos, int ypos, int width, int height,
             // color of this tab
             plume->color(0xeeee0000); // light yellow+green (chlorine)
             plume->selection_color(0xeeee0000); // light yellow+green
+           
+            // plume selection
+            dlg_w.plume_sel = new Fl_Choice(t_x+t_w/3, t_y+25+10, 200, 25, "Which to Edit");
+            for (int i = 0; i < dlg_w.source_num->value()+1; i++) {
+                snprintf(name_str, 20, "%d", i+1);
+                dlg_w.plume_sel->add(name_str);
+            }
+            dlg_w.plume_sel->value(0);
+            dlg_w.plume_sel->callback(cb_change_plume_sel, (void*)&dlg_w);
+            // plume model selection
+            dlg_w.plume_model_sel = new Fl_Choice(t_x+t_w/3, t_y+25+10+30, 200, 25, "Plume Model");
+            dlg_w.plume_model_sel->add("Farrell Filament");
+            dlg_w.plume_model_sel->value(0);
+            dlg_w.plume_model_sel->callback(cb_change_plume_model_selection, (void*)&dlg_w);
+            // plume model parameters --- Farrell
+            dlg_w.plume_model_farrell_box = new Fl_Box(t_x+10, t_y+25+10+60, t_w-20, 100, "Farrell Filament Model Parameters");
+            dlg_w.plume_model_farrell_box->box(FL_PLASTIC_UP_FRAME);
+            dlg_w.plume_model_farrell_box->labelsize(16);
+            dlg_w.plume_model_farrell_box->labelfont(FL_COURIER_BOLD_ITALIC);
+            dlg_w.plume_model_farrell_box->align(Fl_Align(FL_ALIGN_TOP|FL_ALIGN_INSIDE));
+            dlg_w.plume_model_farrell_pps = new Fl_Value_Input(t_x+t_w/3, t_y+25+10+90, 200, 25, "Parcels/Second");
+            dlg_w.plume_model_farrell_pps->type(FL_INT_INPUT);
+            dlg_w.plume_model_farrell_pps->step(1);
+            dlg_w.plume_model_farrell_pps->range(1, RAOS_MODEL_UPDATE_FREQ); // the source release one parcel every update interval
+            dlg_w.plume_model_farrell_lambda = new Fl_Value_Input(t_x+t_w/3, t_y+25+10+120, 200, 25, "Lambda");
+            dlg_w.plume_model_farrell_lambda->type(FL_FLOAT_INPUT);
+            dlg_w.plume_model_farrell_pps->callback(cb_change_plume_model_parameters, (void*)&dlg_w);
+            dlg_w.plume_model_farrell_lambda->callback(cb_change_plume_model_parameters, (void*)&dlg_w);
         }
         plume->end();
         // Tab Robot
@@ -515,7 +633,8 @@ Fl_Group(Xpos, Ypos, Width, Height)
 void RAOS_UI::cb_close(Fl_Widget* w, void* data) {
     // close RAOS
     if (Fl::event() == FL_CLOSE) {
-        //sim_stop();
+        // stop simulation
+        RAOS_model_thread_destroy();
 
         // close main window
         ((Fl_Window*)w)->hide();

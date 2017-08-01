@@ -157,16 +157,38 @@ static void draw_sim_time_note(void)
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
         gluOrtho2D(0.0, sim_width, 0.0, sim_height);
-        sprintf(buf, "Time= %d m %.1f s", (int)(time_passed/60), time_passed-((int)(time_passed/60))*60);
+        sprintf(buf, "Time = %d m %.1f s", (int)(time_passed/60), time_passed-((int)(time_passed/60))*60);
         glColor3f(1.0f, 1.0f, 1.0f);
         gl_font(FL_HELVETICA, 12);
-        gl_draw(buf, 260, 10);
+        gl_draw(buf, 200, 10);
+    }glEnable(GL_LIGHTING);
+}
+
+static void draw_sim_speed_note(void)
+{
+    char buf[256];
+
+    if (!RAOS_model_thread_is_running())
+        return;
+
+    double real_speed = (RAOS_model_thread_get_state())->speed;
+    
+    glDisable(GL_LIGHTING);
+    {
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        gluOrtho2D(0.0, sim_width, 0.0, sim_height);
+        sprintf(buf, "Real Speed = %.1f", real_speed);
+        glColor3f(1.0f, 1.0f, 1.0f);
+        gl_font(FL_HELVETICA, 12);
+        gl_draw(buf, 400, 10);
     }glEnable(GL_LIGHTING);
 }
 
 static void draw_notes(void) {
     draw_ui_fps_note();     // frames per second of UI
     draw_sim_time_note(); // simulation time passed since start
+    draw_sim_speed_note(); // simulation speed
 }
 
 

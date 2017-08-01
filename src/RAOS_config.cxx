@@ -42,6 +42,7 @@ void RAOS_config_restore(void)
         settings.arena.l = pt.get<float>("Arena.length");
         settings.arena.h = pt.get<float>("Arena.height");
         settings.arena.num_sources = pt.get<int>("Arena.num_sources");
+        settings.arena.num_robots = pt.get<int>("Arena.num_robots");
         // wind
         settings.wind.model_name = pt.get<std::string>("Wind.model_name");
         settings.wind.wind_vel[0] = pt.get<float>("Wind.wind_vel_x");
@@ -66,14 +67,20 @@ void RAOS_config_restore(void)
         }
         // robot
         for (int i = 0; i < RAOS_MAX_NUM_ROBOTS; i++) {
-            snprintf(name_str, 100, "Robot_%d.type", i+1);
-            settings.robot[i].type = pt.get<std::string>(name_str);
+            snprintf(name_str, 100, "Robot_%d.model_name", i+1);
+            settings.robot[i].model_name = pt.get<std::string>(name_str);
             snprintf(name_str, 100, "Robot_%d.init_pos_x", i+1);
             settings.robot[i].init_pos[0] = pt.get<float>(name_str);
             snprintf(name_str, 100, "Robot_%d.init_pos_y", i+1);
             settings.robot[i].init_pos[1] = pt.get<float>(name_str);
             snprintf(name_str, 100, "Robot_%d.init_pos_z", i+1);
             settings.robot[i].init_pos[2] = pt.get<float>(name_str);
+            snprintf(name_str, 100, "Robot_%d.init_att_x", i+1);
+            settings.robot[i].init_att[0] = pt.get<float>(name_str);
+            snprintf(name_str, 100, "Robot_%d.init_att_y", i+1);
+            settings.robot[i].init_att[1] = pt.get<float>(name_str);
+            snprintf(name_str, 100, "Robot_%d.init_att_z", i+1);
+            settings.robot[i].init_att[2] = pt.get<float>(name_str);
         } 
     }
 }
@@ -94,6 +101,7 @@ void RAOS_config_save(void)
     pt.put("Arena.length", settings.arena.l);
     pt.put("Arena.height", settings.arena.h);
     pt.put("Arena.num_sources", settings.arena.num_sources);
+    pt.put("Arena.num_robots", settings.arena.num_robots);
     // wind
     pt.put("Wind.model_name", settings.wind.model_name);
     pt.put("Wind.wind_vel_x", settings.wind.wind_vel[0]);
@@ -118,14 +126,20 @@ void RAOS_config_save(void)
     }
     // robot
     for (int i = 0; i < RAOS_MAX_NUM_ROBOTS; i++) {
-        snprintf(name_str, 100, "Robot_%d.type", i+1);
-        pt.put(name_str, settings.robot[i].type);
+        snprintf(name_str, 100, "Robot_%d.model_name", i+1);
+        pt.put(name_str, settings.robot[i].model_name);
         snprintf(name_str, 100, "Robot_%d.init_pos_x", i+1);
         pt.put(name_str, settings.robot[i].init_pos[0]);
         snprintf(name_str, 100, "Robot_%d.init_pos_y", i+1);
         pt.put(name_str, settings.robot[i].init_pos[1]);
         snprintf(name_str, 100, "Robot_%d.init_pos_z", i+1);
         pt.put(name_str, settings.robot[i].init_pos[2]);
+        snprintf(name_str, 100, "Robot_%d.init_att_x", i+1);
+        pt.put(name_str, settings.robot[i].init_att[0]);
+        snprintf(name_str, 100, "Robot_%d.init_att_y", i+1);
+        pt.put(name_str, settings.robot[i].init_att[1]);
+        snprintf(name_str, 100, "Robot_%d.init_att_z", i+1);
+        pt.put(name_str, settings.robot[i].init_att[2]);
     }
 
     /* write */
@@ -144,6 +158,7 @@ void RAOS_config_init(void)
     settings.arena.l = 10; // y
     settings.arena.h = 10; // z
     settings.arena.num_sources = 1; // one source by default
+    settings.arena.num_robots = 1; // one robot by default
     // wind
     settings.wind.model_name = "Uniform"; // "Potential"
     settings.wind.wind_vel[0] = 0.5;
@@ -161,10 +176,13 @@ void RAOS_config_init(void)
     }
     // robot
     for (int i = 0; i < RAOS_MAX_NUM_ROBOTS; i++) {
-        settings.robot[i].type = "quadrotor";
+        settings.robot[i].model_name = "MicroBee";
         settings.robot[i].init_pos[0] = 1;
         settings.robot[i].init_pos[1] = 0+i*0.5;
         settings.robot[i].init_pos[2] = 2;
+        settings.robot[i].init_att[0] = 0;
+        settings.robot[i].init_att[1] = 0;
+        settings.robot[i].init_att[2] = 0;
     }
 }
 

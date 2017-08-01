@@ -139,7 +139,10 @@ set(LIB_MODEL_NAME model) # models
 #else()
 add_library(${LIB_MODEL_NAME}
     src/model/RAOS_model.cxx
-    src/model/model_wind_uniform.cxx )
+    src/model/model_wind_uniform.cxx
+    src/model/model_wind_potential.cxx
+    src/model/model_plume_farrell.cxx
+    src/model/model_robot_pioneer.cxx )
 #        src/model/SimModel.cxx
 #        src/model/plume.cxx
 #        src/model/robot.cxx src/model/quadrotor.cxx
@@ -172,7 +175,7 @@ add_library(${LIB_UI_NAME}
 add_executable(${PRJ_NAME}
     src/main.cxx
     src/RAOS_config.cxx
-    #src/model/environment.cxx
+    src/common/RAOS_serial_protocol.cxx
     #src/common/math/rotation.cxx src/common/math/linalg.cxx
     )
 add_dependencies(${PRJ_NAME} ${LIB_UI_NAME} ${LIB_MODEL_NAME} ${LIB_METHOD_NAME})
@@ -185,6 +188,8 @@ target_link_libraries(${PRJ_NAME} ${LIB_UI_NAME})
 target_link_libraries(${PRJ_NAME} ${LIB_MODEL_NAME})
 # link method library created above
 target_link_libraries(${PRJ_NAME} ${LIB_METHOD_NAME})
+# link external nanomsg library
+target_link_libraries(${PRJ_NAME} nanomsg)
 # link external FLTK library
 target_link_libraries(${PRJ_NAME} fltk)
 # link external OpenGL library

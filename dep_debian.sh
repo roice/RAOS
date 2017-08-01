@@ -84,3 +84,5 @@ apt-get install zlib1g zlib1g-dev
 apt-get install libboost-dev
 # libeigen
 apt-get install libeigen3-dev
+# nanomsg
+apt-get install libnanomsg-dev python-nanomsg
