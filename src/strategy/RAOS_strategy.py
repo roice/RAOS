@@ -27,6 +27,6 @@ data.append(checksum)
 
 while True:
     sock.send(data)
-    time.sleep(1)
+    time.sleep(0.01)
 
 sock.close()

@@ -21,6 +21,7 @@
 #include "common/RAOS_serial_protocol.h"
 #include "common/endian/little_endian.hpp"
 #include "model/RAOS_model.h"
+#include "model/model_wind.h"
 #include "model/model_wind_uniform.h"
 #include "model/model_wind_potential.h"
 #include "model/model_plume_farrell.h"
@@ -131,16 +132,16 @@ bool RAOS_model_thread_create(void)
     if (configs->wind.model_name == "Uniform") {
         RAOS_model_create(RAOS_MODEL_WIND_UNIFORM); // create model
         // init parameters
-        ((model_wind_uniform_c*)(RAOS_model_list.back().ptr))->wind_vel[0] = configs->wind.wind_vel[0];
-        ((model_wind_uniform_c*)(RAOS_model_list.back().ptr))->wind_vel[1] = configs->wind.wind_vel[1];
-        ((model_wind_uniform_c*)(RAOS_model_list.back().ptr))->wind_vel[2] = configs->wind.wind_vel[2];
+        ((model_wind_uniform_c*)(RAOS_model_list.back().ptr))->set_vel(configs->wind.wind_vel);
+        // register
+        model_wind_register(&(RAOS_model_list.back()));
     }
     else if (configs->wind.model_name == "Potential") {
         RAOS_model_create(RAOS_MODEL_WIND_POTENTIAL); // create model
         // init parameters
-        ((model_wind_potential_c*)(RAOS_model_list.back().ptr))->mean_wind_vel[0] = configs->wind.wind_vel[0];
-        ((model_wind_potential_c*)(RAOS_model_list.back().ptr))->mean_wind_vel[1] = configs->wind.wind_vel[1];
-        ((model_wind_potential_c*)(RAOS_model_list.back().ptr))->mean_wind_vel[2] = configs->wind.wind_vel[2];
+        ((model_wind_potential_c*)(RAOS_model_list.back().ptr))->set_mean_vel(configs->wind.wind_vel);
+        // register
+        model_wind_register(&(RAOS_model_list.back()));
     }
     else
     {}
@@ -190,6 +191,7 @@ bool RAOS_model_thread_destroy(void)
             memset(&RAOS_model_list.at(i), 0, sizeof(RAOS_model_t)); 
         }
         RAOS_model_list.clear();
+        model_wind_unregister();
         // clear handler
         RAOS_model_thread_handler = 0;
         printf("RAOS model thread has been terminated, and models have been destroyed.\n");

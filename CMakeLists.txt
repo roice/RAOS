@@ -139,6 +139,7 @@ set(LIB_MODEL_NAME model) # models
 #else()
 add_library(${LIB_MODEL_NAME}
     src/model/RAOS_model.cxx
+    src/model/model_wind.cxx
     src/model/model_wind_uniform.cxx
     src/model/model_wind_potential.cxx
     src/model/model_plume_farrell.cxx

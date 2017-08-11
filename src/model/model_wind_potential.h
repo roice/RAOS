@@ -4,7 +4,9 @@
 class model_wind_potential_c {
     public:
         model_wind_potential_c(void);
+        void set_mean_vel(float*);
         void update(void);
+    private:
         float mean_wind_vel[3];
 };
 
