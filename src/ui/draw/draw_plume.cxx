@@ -13,26 +13,41 @@
 #include GL_HEADER
 #include GLUT_HEADER
 #include <vector>
-#include "model/plume.h"
+#include "RAOS_config.h"
+#include "model/model_plume.h"
+#include "model/model_plume_farrell.h"
 #include "ui/draw/materials.h"
+#include <thrust/host_vector.h>
+
+void draw_plume_farrell(thrust::host_vector<float>** puffs)
+{
+    if (puffs) {
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        for (int i = 0; i < MODEL_PLUME_FARRELL_MAX_NUM_PUFFS; i++) // for each filament
+        {
+            if ((*puffs[6])[i] >= MODEL_PLUME_FARRELL_MAX_PUFF_SIZE)
+                continue;
+            glPushMatrix(); 
+            glTranslatef((*puffs[0])[i], (*puffs[2])[i], -(*puffs[1])[i]);
+            glPushAttrib(GL_LIGHTING_BIT);
+            //SimMaterial_chlorine(1.0-10*(*puffs[6])[i]);
+            SimMaterial_smoke(1.0);
+            glutSolidSphere((*puffs[6])[i], 8, 3);
+            glPopAttrib();
+            glPopMatrix();
+        }
+        glDisable(GL_BLEND);
+    }
+}
 
 void draw_plume(void)
 {
-    std::vector<FilaState_t> *fs = plume_get_fila_state();
-   
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    for (int i = 0; i < fs->size(); i++) // for each filament
-    {
-        glPushMatrix(); 
-        glTranslatef(fs->at(i).pos[0], fs->at(i).pos[2], -fs->at(i).pos[1]);
-        glPushAttrib(GL_LIGHTING_BIT);
-        SimMaterial_chlorine(1.0-10*fs->at(i).r);
-        //SimMaterial_smoke(1.0-10*fs->at(i).r);
-        glutSolidSphere(fs->at(i).r, 8, 3);
-        glPopAttrib();
-        glPopMatrix();
+    RAOS_config_t *configs = RAOS_config_get_settings();
+
+    for (int i = 0; i < configs->arena.num_sources; i++) {
+        if (configs->plume[i].model_name == "Farrell")
+            draw_plume_farrell((thrust::host_vector<float>**)model_plume_get_state(i));
     }
-    glDisable(GL_BLEND);
 }
 /* End of draw_plume.cxx */

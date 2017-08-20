@@ -14,9 +14,7 @@
 #ifndef DRAW_ROBOTS_H
 #define DRAW_ROBOTS_H
 
-#include <vector>
-
-void draw_robots(std::vector<Robot*>*);
+void draw_robots(void);
 
 #endif
 /* End of draw_robots.h */

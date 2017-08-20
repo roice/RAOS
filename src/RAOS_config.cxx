@@ -154,21 +154,21 @@ void RAOS_config_init(void)
     settings.common.dt = 1.0/50.0; // 50 Hz
     settings.common.speed = 0; // auto highest
     // arena
-    settings.arena.w = 10; // x
-    settings.arena.l = 10; // y
-    settings.arena.h = 10; // z
+    settings.arena.w = 20; // x
+    settings.arena.l = 20; // y
+    settings.arena.h = 20; // z
     settings.arena.num_sources = 1; // one source by default
     settings.arena.num_robots = 1; // one robot by default
     // wind
     settings.wind.model_name = "Uniform"; // "Potential"
-    settings.wind.wind_vel[0] = 0.5;
+    settings.wind.wind_vel[0] = 1.0;
     settings.wind.wind_vel[1] = 0.;
     settings.wind.wind_vel[2] = 0.;
     // plume
     for (int i = 0; i < RAOS_MAX_NUM_SOURCES; i++) {
         settings.plume[i].source_pos[0] = 0;
         settings.plume[i].source_pos[1] = 0+i*0.5;
-        settings.plume[i].source_pos[2] = 0;
+        settings.plume[i].source_pos[2] = 2.0;
         settings.plume[i].source_mps = 235.5; // 2.355*10^20 molecules/parcel
         settings.plume[i].model_name = "Farrell";
         settings.plume[i].model_farrell_pps = 100;

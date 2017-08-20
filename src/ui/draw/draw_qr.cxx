@@ -16,8 +16,6 @@
 #include <math.h>
 #include GL_HEADER
 #include "ui/draw/materials.h" // use material lists
-#include "model/robot.h"
-#include "model/quadrotor.h"
 
 #ifndef PI
 #define PI 3.14159265
@@ -32,10 +30,10 @@ static double RAD2DEG = 180 / PI;
 // simple planar
 static void draw_motor(double);
 static void draw_rotor(double);
-static void draw_qr_model(RobotState_t*, QRframe_t*, int shadow);
+static void draw_qr_model(float, float, int shadow);
 
 /* draw the quad rotor, simple planar */
-void draw_qr(RobotState_t* state, QRframe_t* frame)
+void draw_qr(float* pos, float* att, float frame_size, float prop_radius)
 {
     double phi, theta, psi;
 	double glX, glY, glZ;
@@ -46,12 +44,12 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
     		0.0, 0.0, 0.0, 1.0
   	};
     /* change from NASA airplane to OpenGL coordinates */
-  	glX = state->pos[0];
-	glZ = -state->pos[1];
-	glY = state->pos[2];
- 	phi = state->att[0];
-	theta = state->att[1];
-	psi = state->att[2];
+  	glX = pos[0];
+	glZ = -pos[1];
+	glY = pos[2];
+ 	phi = att[0];
+	theta = att[1];
+	psi = att[2];
 
     /* draw the quad rotor */
     glPushMatrix(); 
@@ -65,7 +63,7 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
   	glRotatef(RAD2DEG * theta, 0.0, 0.0, -1.0);
   	glRotatef(RAD2DEG * phi, 1.0, 0.0, 0.0); 
 
-  	draw_qr_model(state, frame, 0);
+  	draw_qr_model(frame_size, prop_radius, 0);
       	
   	glPopMatrix();
 
@@ -84,7 +82,7 @@ void draw_qr(RobotState_t* state, QRframe_t* frame)
   	glEnable(GL_BLEND);
   	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-  	draw_qr_model(state, frame, 1); 
+  	draw_qr_model(frame_size, prop_radius, 1); 
 
   	glDisable(GL_BLEND);
   	glPopMatrix();
@@ -132,7 +130,7 @@ static void draw_rotor(double radius)
     draw_ring(radius*1.03, radius*0.97);
 }
 
-static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
+static void draw_qr_model(float frame_size, float prop_radius, int shadow)
 {
     GLfloat qr_strut_r; // frame_size/2
     GLfloat qr_prop_r; // propeller radius
@@ -140,8 +138,8 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
     GLfloat qr_cover_s_x; // cover size * 2
     GLfloat qr_motor_s; // motor size (radius)
 
-    qr_strut_r = frame->size/2.0;
-    qr_prop_r = frame->prop_radius;
+    qr_strut_r = frame_size/2.0;
+    qr_prop_r = prop_radius;
 
     glPushAttrib(GL_LIGHTING_BIT);
 
@@ -288,22 +286,6 @@ static void draw_qr_model(RobotState_t* state, QRframe_t* frame, int shadow)
 
   	glEnd();
 #endif
-
-#if 0
-    /* "led" blinks, actually one propeller blinks */    
-	if (state->leds & 0x0001 && !shadow) 
-    {// turn on led (actually one motor)
-        glDisable(GL_LIGHTING);
-        glColor3f(1.0, 0.0, 0.0); /* red */
-        glPushMatrix();
-        {
-            glTranslatef(qr_strut_r, 0.0, 0.0);
-            draw_ring(qr_motor_s, qr_prop_r);
-        }glPopMatrix();
-        glEnable(GL_LIGHTING);
-	}
-#endif
-
 
     /* draw the mast of quad rotor, indicating up/down */
     glDisable(GL_LIGHTING);

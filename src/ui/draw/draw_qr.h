@@ -14,10 +14,7 @@
 #ifndef DRAW_QR_H
 #define DRAW_QR_H
 
-#include "model/robot.h"
-#include "model/quadrotor.h"
-
-void draw_qr(RobotState_t*, QRframe_t*);
+void draw_qr(float*, float*, float, float);
 
 #endif
 /* End of draw_qr.h */

@@ -1,6 +1,7 @@
 #ifndef RAOS_MODEL_H
 #define RAOS_MODEL_H
 
+#include <vector>
 #include "common/RAOS_types.h"
 
 // update frequency (Hz)
@@ -14,7 +15,8 @@ bool RAOS_model_destroy(RAOS_model_t*);
 bool RAOS_model_update(RAOS_model_t*);
 int RAOS_model_encode_info2string(RAOS_model_t*, char*);
 bool RAOS_model_decode_string2cmd(char*, int);
-
+std::vector<RAOS_model_t>* RAOS_model_get_list(void);
+int RAOS_model_list_find_robot_by_type_and_id(RAOS_model_type_e type, int id);
 
 /*
  * Functions to create/destroy/manage model thread

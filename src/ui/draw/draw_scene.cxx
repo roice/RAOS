@@ -17,8 +17,8 @@
 /* RAOS */
 #include "ui/draw/materials.h" // create material lists
 #include "ui/draw/draw_arena.h" // arena visualization
-//#include "ui/draw/draw_plume.h" // plume visual
-//#include "ui/draw/draw_robots.h" // robots visualization
+#include "ui/draw/draw_plume.h" // plume visual
+#include "ui/draw/draw_robots.h" // robots visualization
 //#ifdef RAOS_FEATURE_WAKES
 //    #include "ui/draw/draw_wake.h" // wake visual
 //#endif
@@ -65,8 +65,10 @@ void draw_scene_update(void)
     /* draw wind field */
 
     /* draw plumes */
+    draw_plume();
 
     /* draw robots */
+    draw_robots();
 
     /* draw wakes */
 

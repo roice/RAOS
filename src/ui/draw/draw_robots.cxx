@@ -13,20 +13,28 @@
 
 #include GL_HEADER
 #include <vector>
-#include "model/robot.h"
-#include "model/quadrotor.h"
+#include "RAOS_config.h"
+#include "model/RAOS_model.h"
+#include "model/model_robot_microbee.h"
+#include "common/RAOS_types.h"
 #include "ui/draw/draw_qr.h"
 
-void draw_robots(std::vector<Robot*>* robots)
+void draw_robots(void)
 {
-    for (int idx_robot = 0; idx_robot < robots->size(); idx_robot++)
+    RAOS_config_t *configs = RAOS_config_get_settings();
+
+    for (int idx_robot = 0; idx_robot < configs->arena.num_robots; idx_robot++)
     {// draw every robot
 
         /* draw robot according to its type, configures... */
-        if (robots->at(idx_robot)->config.type == quadrotor)
+        if (configs->robot[idx_robot].model_name == "MicroBee")
         {// draw quadrotor
-            draw_qr(&(robots->at(idx_robot)->state), 
-                    (QRframe_t*)(robots->at(idx_robot)->config.frame));
+            int model_order = RAOS_model_list_find_robot_by_type_and_id(RAOS_MODEL_ROBOT_MICROBEE, idx_robot);
+            if (model_order < 0)
+                continue;
+            float *pos = ((model_robot_microbee_c*)(RAOS_model_get_list()->at(model_order).ptr))->pos;
+            float *att = ((model_robot_microbee_c*)(RAOS_model_get_list()->at(model_order).ptr))->att;
+            draw_qr(pos, att, 0.5, 0.15);
         }
     }
 }

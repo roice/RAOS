@@ -1,3 +1,6 @@
+#ifndef RAOS_TYPES_H
+#define RAOS_TYPES_H
+
 /*
  * RAOS model types
  *
@@ -10,7 +13,9 @@ typedef enum {
     // potential flow field model
     RAOS_MODEL_WIND_POTENTIAL,
     // Farrell plume model
-    RAOS_MODEL_PLUME_FARRELL,
+    RAOS_MODEL_PLUME_FARRELL, // begin of plume types
+    // custom plume model
+    RAOS_MODEL_PLUME_CUSTOM,  // end of plume types
     // pioneer robot model
     RAOS_MODEL_ROBOT_PIONEER, // begin of robot types
     // microbee robot model
@@ -43,3 +48,5 @@ typedef struct {
     double  time_passed;
     float   speed;  // simulation speed
 } RAOS_model_thread_state_t;
+
+#endif

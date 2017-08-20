@@ -95,7 +95,8 @@ add_definitions(-DGL_HEADER="FL/gl.h" -DGLU_HEADER="FL/glu.h" -DGLUT_HEADER="FL/
 #---- External CUDA related settings ----
 find_package(CUDA REQUIRED)
 # nvcc flags
-set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-gencode arch=compute_50,code=sm_50;-use_fast_math)
+#set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}; -ccbin clang;)
 #---- External HDF5 related, for data recording
 find_package(HDF5 COMPONENTS C CXX REQUIRED)
 include_directories(${HDF5_INCLUDE_DIRS})
@@ -137,13 +138,16 @@ set(LIB_MODEL_NAME model) # models
 #        src/model/robot.cxx src/model/quadrotor.cxx
 #        3rdparty/ziggurat/ziggurat.cpp)
 #else()
-add_library(${LIB_MODEL_NAME}
+cuda_add_library(${LIB_MODEL_NAME}
     src/model/RAOS_model.cxx
     src/model/model_wind.cxx
     src/model/model_wind_uniform.cxx
     src/model/model_wind_potential.cxx
-    src/model/model_plume_farrell.cxx
-    src/model/model_robot_pioneer.cxx )
+    src/model/model_plume.cxx
+    src/model/model_plume_farrell.cu
+    src/model/model_robot_pioneer.cxx
+    src/model/model_robot_microbee.cxx
+    )
 #        src/model/SimModel.cxx
 #        src/model/plume.cxx
 #        src/model/robot.cxx src/model/quadrotor.cxx
@@ -161,9 +165,9 @@ add_library(${LIB_MODEL_NAME}
 add_library(${LIB_UI_NAME}
     src/ui/RAOS_UI.cxx src/ui/RAOS_view.cxx src/ui/agv.cxx
     src/ui/draw/draw_scene.cxx src/ui/draw/materials.cxx
-    src/ui/draw/draw_arena.cxx
-#        src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
-#        src/ui/draw/draw_plume.cxx
+    src/ui/draw/draw_arena.cxx src/ui/draw/draw_plume.cxx
+    src/ui/draw/draw_robots.cxx src/ui/draw/draw_qr.cxx
+#
 #        src/ui/draw/draw_ref_point.cxx
         )
 #endif()
@@ -177,6 +181,7 @@ add_executable(${PRJ_NAME}
     src/main.cxx
     src/RAOS_config.cxx
     src/common/RAOS_serial_protocol.cxx
+    src/common/math/colored_noise.cxx
     #src/common/math/rotation.cxx src/common/math/linalg.cxx
     )
 add_dependencies(${PRJ_NAME} ${LIB_UI_NAME} ${LIB_MODEL_NAME} ${LIB_METHOD_NAME})

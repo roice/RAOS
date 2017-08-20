@@ -26,6 +26,7 @@
 #include "model/model_wind_potential.h"
 #include "model/model_plume_farrell.h"
 #include "model/model_robot_pioneer.h"
+#include "model/model_robot_microbee.h"
 
 /* Models */
 // list containing info of models created
@@ -150,8 +151,6 @@ bool RAOS_model_thread_create(void)
     {
         if (configs->plume[i].model_name == "Farrell") {
             RAOS_model_create(RAOS_MODEL_PLUME_FARRELL); // create model
-            // init parameters
-            ((model_plume_farrell_c*)(RAOS_model_list.back().ptr))->lambda = configs->plume[i].model_farrell_lambda;
         }
         else
         {}
@@ -162,8 +161,9 @@ bool RAOS_model_thread_create(void)
         if (configs->robot[i].model_name == "Pioneer") {
             RAOS_model_create(RAOS_MODEL_ROBOT_PIONEER); // create model
         }
-        else
-        {}
+        else if (configs->robot[i].model_name == "MicroBee") {
+            RAOS_model_create(RAOS_MODEL_ROBOT_MICROBEE); // create model
+        }
     }
 
     /* create simulation loop */
@@ -237,6 +237,27 @@ void RAOS_model_thread_unlock_data(void)
 /* Functions of models */
 
 /*
+ * Count number of plume models in the model list
+ *
+ * Output:  amount of plume models in the model list
+ */
+int RAOS_model_list_amount_of_plumes(void)
+{
+    int count = 0;
+
+    for (int i = 0; i < (int)(RAOS_model_list.size()); i++) {
+        if (RAOS_model_list.at(i).type >= RAOS_MODEL_PLUME_FARRELL and RAOS_model_list.at(i).type <= RAOS_MODEL_PLUME_CUSTOM)
+            count ++;
+    }
+    return count;
+}
+
+std::vector<RAOS_model_t>* RAOS_model_get_list(void)
+{
+    return &RAOS_model_list;
+}
+
+/*
  * Count number of robots in the model list
  *
  * Output:  amount of robots in the model list
@@ -268,9 +289,17 @@ int RAOS_model_list_find_robot_by_type_and_id(RAOS_model_type_e type, int id)
         if (RAOS_model_list.at(i).type == type) {
             switch (type) {
                 case RAOS_MODEL_ROBOT_PIONEER:
+                {
                     if (((model_robot_pioneer_c*)(RAOS_model_list.at(i).ptr))->id == id)
                         result = i;
                     break;
+                }
+                case RAOS_MODEL_ROBOT_MICROBEE:
+                {
+                    if (((model_robot_microbee_c*)(RAOS_model_list.at(i).ptr))->id == id)
+                        result = i;
+                    break;
+                }
                 default:
                     break;
             }
@@ -285,10 +314,27 @@ bool RAOS_model_create(RAOS_model_type_e type)
     RAOS_model_t    new_model;
     new_model.type = type;
 
+    RAOS_config_t *configs = RAOS_config_get_settings();
+
     switch (type) {
         case RAOS_MODEL_WIND_UNIFORM: 
         {
-            new_model.ptr = new model_wind_uniform_c();
+            new_model.ptr = new model_wind_uniform_c(configs->common.dt);
+            if (!new_model.ptr)
+                return false;
+            break;
+        }
+        case RAOS_MODEL_PLUME_FARRELL:
+        {
+            int idx_plume = RAOS_model_list_amount_of_plumes();
+            new_model.ptr = new model_plume_farrell_c(
+                    configs->plume[idx_plume].source_pos[0],
+                    configs->plume[idx_plume].source_pos[1],
+                    configs->plume[idx_plume].source_pos[2],
+                    configs->plume[idx_plume].model_farrell_lambda,
+                    configs->plume[idx_plume].model_farrell_pps,
+                    configs->common.dt
+                    );
             if (!new_model.ptr)
                 return false;
             break;
@@ -303,6 +349,18 @@ bool RAOS_model_create(RAOS_model_type_e type)
             RAOS_config_t *configs = RAOS_config_get_settings();
             memcpy(((model_robot_pioneer_c*)(new_model.ptr))->pos, configs->robot[((model_robot_pioneer_c*)(new_model.ptr))->id].init_pos, 3*sizeof(float));
             memcpy(((model_robot_pioneer_c*)(new_model.ptr))->att, configs->robot[((model_robot_pioneer_c*)(new_model.ptr))->id].init_att, 3*sizeof(float));
+            break;
+        }
+        case RAOS_MODEL_ROBOT_MICROBEE:
+        {
+            new_model.ptr = new model_robot_microbee_c();
+            if (!new_model.ptr)
+                return false;
+            ((model_robot_microbee_c*)(new_model.ptr))->type = RAOS_MODEL_ROBOT_MICROBEE;
+            ((model_robot_microbee_c*)(new_model.ptr))->id = RAOS_model_list_amount_of_robots();
+            RAOS_config_t *configs = RAOS_config_get_settings();
+            memcpy(((model_robot_microbee_c*)(new_model.ptr))->pos, configs->robot[((model_robot_microbee_c*)(new_model.ptr))->id].init_pos, 3*sizeof(float));
+            memcpy(((model_robot_microbee_c*)(new_model.ptr))->att, configs->robot[((model_robot_microbee_c*)(new_model.ptr))->id].init_att, 3*sizeof(float));
             break;
         }
         default:
@@ -335,10 +393,26 @@ bool RAOS_model_update(RAOS_model_t *model)
     switch (model->type)
     {
         case RAOS_MODEL_WIND_UNIFORM:
+        {    
             if (!model->ptr)
                 return false;
             ((model_wind_uniform_c*)(model->ptr))->update();
             break;
+        }
+        case RAOS_MODEL_PLUME_FARRELL:
+        {
+            if (!model->ptr)
+                return false;
+            ((model_plume_farrell_c*)(model->ptr))->update();
+            break;
+        }
+        case RAOS_MODEL_ROBOT_MICROBEE:
+        {
+            if (!model->ptr)
+                return false;
+            ((model_robot_microbee_c*)(model->ptr))->update();
+            break;
+        }
         default:
             return false;
     }
@@ -351,10 +425,19 @@ int RAOS_model_encode_info2string(RAOS_model_t *model, uint8_t *buf)
     switch (model->type)
     {
         case RAOS_MODEL_ROBOT_PIONEER:
+        {
             if (!model->ptr)
                 return false;
             return ((model_robot_pioneer_c*)(model->ptr))->encode_info2string(buf);
             break;
+        }
+        case RAOS_MODEL_ROBOT_MICROBEE:
+        {
+            if (!model->ptr)
+                return false;
+            return ((model_robot_microbee_c*)(model->ptr))->encode_info2string(buf);
+            break;
+        }
         default:
             return 0;
     }
@@ -367,26 +450,39 @@ bool RAOS_model_decode_string2cmd(uint8_t *buf, int len)
     for (int i = 0; i < len; i++) {
         if (RAOS_serial_protocol_parser(buf[i], &rsp_frame)) {
             
-printf("Received a frame\n");
+//printf("Received a frame\n");
             
             // received a frame
             switch (rsp_frame.cmd) {
-                case RSP_CMD_ROBOT_GOTO: {
+                case RSP_CMD_ROBOT_GOTO:
+                {
                     int model_list_idx = RAOS_model_list_find_robot_by_type_and_id((RAOS_model_type_e)rsp_frame.data[0], rsp_frame.data[1]);
                     if (model_list_idx < 0)
                         break;
-                    model_robot_pioneer_c *robot = (model_robot_pioneer_c*)(RAOS_model_list.at(model_list_idx).ptr);
+                    void *robot;
+                    if ((RAOS_model_type_e)rsp_frame.data[0] == RAOS_MODEL_ROBOT_PIONEER)
+                        robot = (model_robot_pioneer_c*)(RAOS_model_list.at(model_list_idx).ptr);
+                    else if ((RAOS_model_type_e)rsp_frame.data[0] == RAOS_MODEL_ROBOT_MICROBEE)
+                        robot = (model_robot_microbee_c*)(RAOS_model_list.at(model_list_idx).ptr);
+                    else
+                        break;
                     uint32_t temp;
                     // position
                     for (int i = 0; i < 3; i++) {
                         temp = endian::little_endian::get32(&rsp_frame.data[2+i*sizeof(uint32_t)]);
-                        robot->pos_ref[i] = *((float*)(&temp));
+                        if ((RAOS_model_type_e)rsp_frame.data[0] == RAOS_MODEL_ROBOT_PIONEER)
+                            ((model_robot_pioneer_c*)robot)->pos_ref[i] = *((float*)(&temp));
+                        else if ((RAOS_model_type_e)rsp_frame.data[0] == RAOS_MODEL_ROBOT_MICROBEE)
+                            ((model_robot_microbee_c*)robot)->pos_ref[i] = *((float*)(&temp));
                     }
                     // heading
                     temp = endian::little_endian::get32(&rsp_frame.data[14]);
-                    robot->heading_ref = *((float*)(&temp));
+                    if ((RAOS_model_type_e)rsp_frame.data[0] == RAOS_MODEL_ROBOT_PIONEER)
+                        ((model_robot_pioneer_c*)robot)->heading_ref = *((float*)(&temp));
+                    else if ((RAOS_model_type_e)rsp_frame.data[0] == RAOS_MODEL_ROBOT_MICROBEE)
+                        ((model_robot_microbee_c*)robot)->heading_ref = *((float*)(&temp));
 
-printf("Received robot pioneer goto command, pos_ref = [%f, %f, %f], heading_ref = %f\n", robot->pos_ref[0], robot->pos_ref[1], robot->pos_ref[2], robot->heading_ref);
+//printf("Received robot MicroBee goto command, pos_ref = [%f, %f, %f], heading_ref = %f\n", ((model_robot_microbee_c*)robot)->pos_ref[0], ((model_robot_microbee_c*)robot)->pos_ref[1], ((model_robot_microbee_c*)robot)->pos_ref[2], ((model_robot_microbee_c*)robot)->heading_ref);
 
                     break;
                 }
